@@ -1,0 +1,116 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* Primary color based on lilac from the lilac-breasted roller */
+    --primary: 260 80% 75%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary color based on sky blue from the lilac-breasted roller */
+    --secondary: 196 100% 57%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 152 81% 96%;
+    --accent-foreground: 143 64% 24%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 260 80% 75%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Primary color based on lilac from the lilac-breasted roller */
+    --primary: 260 80% 75%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary color based on sky blue from the lilac-breasted roller */
+    --secondary: 196 100% 57%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 143 64% 24%;
+    --accent-foreground: 152 81% 96%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 260 80% 75%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Custom colors based on the lilac-breasted roller bird */
+.bg-lilac {
+  background-color: #9b87f5;
+}
+.text-lilac {
+  color: #9b87f5;
+}
+.border-lilac {
+  border-color: #9b87f5;
+}
+.hover\:bg-lilac-dark:hover {
+  background-color: #7E69AB;
+}
+
+.bg-skyblue {
+  background-color: #33C3F0;
+}
+.text-skyblue {
+  color: #33C3F0;
+}
+.border-skyblue {
+  border-color: #33C3F0;
+}
+
+.bg-soft-green {
+  background-color: #F2FCE2;
+}
+.text-soft-green {
+  color: #2E7D32;
+}
+.border-soft-green {
+  border-color: #C5E1A5;
+}

@@ -1,0 +1,203 @@
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Search, FileText, Download, Upload, Eye } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+
+export function DocumentsView() {
+  // Mock documents
+  const documents = [
+    {
+      id: "d1",
+      name: "Lease Agreement",
+      category: "Contract",
+      date: "2023-01-15",
+      size: "2.4 MB",
+      type: "PDF",
+      status: "Signed",
+      sender: "Property Management"
+    },
+    {
+      id: "d2",
+      name: "House Rules",
+      category: "Information",
+      date: "2023-01-15",
+      size: "1.2 MB",
+      type: "PDF",
+      status: "Available",
+      sender: "Property Management"
+    },
+    {
+      id: "d3",
+      name: "Rent Receipt - January 2023",
+      category: "Receipt",
+      date: "2023-01-05",
+      size: "0.8 MB",
+      type: "PDF",
+      status: "Available",
+      sender: "Accounting"
+    },
+    {
+      id: "d4",
+      name: "Rent Receipt - February 2023",
+      category: "Receipt",
+      date: "2023-02-03",
+      size: "0.8 MB",
+      type: "PDF",
+      status: "Available",
+      sender: "Accounting"
+    },
+    {
+      id: "d5",
+      name: "Maintenance Policy",
+      category: "Information",
+      date: "2022-12-10",
+      size: "1.5 MB",
+      type: "PDF",
+      status: "Available",
+      sender: "Property Management"
+    },
+    {
+      id: "d6",
+      name: "Property Inspection Report",
+      category: "Report",
+      date: "2023-01-20",
+      size: "3.2 MB",
+      type: "PDF",
+      status: "Available",
+      sender: "Property Management"
+    },
+  ];
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Documents</h1>
+        <Button>
+          <Upload className="mr-2 h-4 w-4" />
+          Upload Document
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4 flex items-center">
+            <div className="p-2 rounded-full bg-blue-100 text-blue-600 mr-4">
+              <FileText className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">All Documents</p>
+              <p className="text-xl font-bold">12</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 flex items-center">
+            <div className="p-2 rounded-full bg-green-100 text-green-600 mr-4">
+              <FileText className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Contracts</p>
+              <p className="text-xl font-bold">3</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 flex items-center">
+            <div className="p-2 rounded-full bg-yellow-100 text-yellow-600 mr-4">
+              <FileText className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Receipts</p>
+              <p className="text-xl font-bold">6</p>
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-4 flex items-center">
+            <div className="p-2 rounded-full bg-purple-100 text-purple-600 mr-4">
+              <FileText className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 font-medium">Information</p>
+              <p className="text-xl font-bold">3</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between">
+        <div className="max-w-md w-full">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+            <Input 
+              placeholder="Search documents..." 
+              className="w-full pl-8"
+            />
+          </div>
+        </div>
+        
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm">All</Button>
+          <Button variant="outline" size="sm">Contracts</Button>
+          <Button variant="outline" size="sm">Receipts</Button>
+          <Button variant="outline" size="sm">Information</Button>
+        </div>
+      </div>
+
+      <div className="overflow-hidden border rounded-md">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {documents.map((document) => (
+              <tr key={document.id}>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-gray-100">
+                      <FileText className="h-5 w-5 text-gray-500" />
+                    </div>
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900">{document.name}</div>
+                      <div className="text-xs text-gray-500">From: {document.sender}</div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <Badge variant="outline">{document.category}</Badge>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {new Date(document.date).toLocaleDateString()}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {document.size} ({document.type})
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <div className="flex space-x-2">
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
