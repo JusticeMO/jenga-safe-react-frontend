@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +27,8 @@ const RegisterForm = () => {
     inviteCode: "",
   });
 
+  console.log("RegisterForm state:", { formStep, role, housingStatus, isLoading, formData });
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -43,9 +44,11 @@ const RegisterForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Submitting registration form...");
     setIsLoading(true);
 
     if (formData.password !== formData.confirmPassword) {
+      console.error("Passwords do not match");
       toast({
         title: "Error",
         description: "Passwords do not match",
@@ -56,14 +59,17 @@ const RegisterForm = () => {
     }
 
     try {
-      const response = await apiClient.register({
+      const registrationData = {
         name: formData.fullName,
         email: formData.email,
         phone: formData.phoneNumber,
         password: formData.password,
         password_confirmation: formData.confirmPassword,
         role: role,
-      });
+      };
+      console.log("Calling apiClient.register with:", registrationData);
+      const response = await apiClient.register(registrationData);
+      console.log("apiClient.register response:", response);
 
       if (response.success) {
         toast({
@@ -80,6 +86,7 @@ const RegisterForm = () => {
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "An error occurred during registration.";
+      console.error("Error during registration:", error);
       toast({
         title: "Registration Failed",
         description: message,

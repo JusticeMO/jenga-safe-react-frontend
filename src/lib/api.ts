@@ -1,5 +1,5 @@
 import { ApiResponse } from "@/types/api";
-import { User, Property, Payment, Message, MaintenanceRequest, Bill, UserRole } from "@/types";
+import { User, Property, Payment, Message, MaintenanceRequest, Bill, UserRole, Complaint, GarbageServiceHistory, WaterUsageHistory, ChatMessage, Dashboard, DashboardStats, Unit, Report, EmergencyContact } from "@/types";
 
 const API_BASE_URL = 'http://localhost:8000/api';
 
@@ -9,19 +9,23 @@ class ApiClient {
 
   constructor() {
     this.token = localStorage.getItem('auth_token');
+    console.log("ApiClient initialized with token:", this.token);
   }
 
   setToken(token: string) {
+    console.log("Setting token:", token);
     this.token = token;
     localStorage.setItem('auth_token', token);
   }
 
   clearToken() {
+    console.log("Clearing token");
     this.token = null;
     localStorage.removeItem('auth_token');
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+    console.log(`Making request to: ${endpoint}`, options);
     const url = `${API_BASE_URL}${endpoint}`;
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -32,31 +36,33 @@ class ApiClient {
       headers.Authorization = `Bearer ${this.token}`;
     }
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      const responseData = await response.json();
+      console.log(`Response from ${endpoint}:`, responseData);
+
+      if (!response.ok) {
+        console.error(`HTTP error from ${endpoint}:`, response.status, responseData);
+        throw new Error(responseData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      return responseData;
+    } catch (error) {
+      console.error(`Error during request to ${endpoint}:`, error);
+      throw error;
     }
-
-    return response.json();
   }
 
   // Auth endpoints
-  async requestOTP(input: string, password: string, role: UserRole) {
-    return this.request('/auth/request-otp', {
-      method: 'POST',
-      body: JSON.stringify({ input, password, role }),
-    });
-  }
-
-  async login(input: string, password: string, otp: string, role: UserRole): Promise<ApiResponse<{ user: User; token: string }>> {
+  async login(input: string, password: string, role: UserRole): Promise<ApiResponse<{ user: User; token: string }>> {
+    console.log("Logging in with:", { input, role });
     const response = await this.request<{ user: User; token: string }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ input, password, otp, role }),
+      body: JSON.stringify({ input, password, role }),
     });
 
     if (response.success && response.data?.token) {
@@ -74,6 +80,7 @@ class ApiClient {
     password_confirmation: string;
     role: UserRole;
   }): Promise<ApiResponse<{ user: User; token: string }>> {
+    console.log("Registering user:", data);
     const response = await this.request<{ user: User; token: string }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -87,6 +94,7 @@ class ApiClient {
   }
 
   async logout(): Promise<ApiResponse<null>> {
+    console.log("Logging out");
     try {
       return await this.request('/auth/logout', { method: 'POST' });
     } finally {
@@ -95,10 +103,12 @@ class ApiClient {
   }
 
   async getUser(): Promise<ApiResponse<{ user: User }>> {
+    console.log("Getting user");
     return this.request<{ user: User }>('/auth/user');
   }
 
   async updateProfile(data: Partial<User>): Promise<ApiResponse<{ user: User }>> {
+    console.log("Updating profile with:", data);
     return this.request<{ user: User }>('/auth/profile', {
       method: 'PUT',
       body: JSON.stringify(data),
