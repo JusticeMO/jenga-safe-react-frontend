@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import {
   Dialog,
@@ -16,6 +15,7 @@ import { PaymentInfoCard } from "./PaymentInfoCard";
 import { STKPushConfirmation } from "./STKPushConfirmation";
 import { PaymentReceipt } from "./PaymentReceipt";
 import { BillDisputeForm } from "./BillDisputeForm";
+import { apiClient } from "@/lib/api";
 
 interface STKPushDialogProps {
   isOpen: boolean;
@@ -44,17 +44,36 @@ export function STKPushDialog({ isOpen, onOpenChange, rentAmount, unitName, phon
     { description: "Garbage Collection", amount: garbageCollectionAmount }
   ];
 
-  const handleSendSTK = () => {
+  const handleSendSTK = async () => {
     setIsProcessing(true);
-
-    setTimeout(() => {
-      setIsProcessing(false);
-      setStkSent(true);
-      toast({
-        title: "STK Push Sent",
-        description: "Please check your phone and enter your M-Pesa PIN to complete the transaction",
+    try {
+      const response = await apiClient.initiateSTKPush({
+        amount: totalAmount,
+        phoneNumber,
       });
-    }, 2000);
+      if (response.success) {
+        setStkSent(true);
+        toast({
+          title: "STK Push Sent",
+          description: "Please check your phone and enter your M-Pesa PIN to complete the transaction",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to send STK push",
+          variant: "destructive",
+        });
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to send STK push";
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleGenerateReceipt = () => {

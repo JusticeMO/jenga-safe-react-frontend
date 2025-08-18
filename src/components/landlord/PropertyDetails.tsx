@@ -11,6 +11,8 @@ import { MapPin, DollarSign, Users, Home, Save } from "lucide-react";
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useEffect, useRef } from "react";
+import { apiClient } from "@/lib/api";
+import { Property } from "@/types";
 
 // This would typically come from an environment variable
 // For a production app, you'd want to use your own Mapbox token
@@ -23,23 +25,39 @@ export function PropertyDetailsView() {
   const { toast } = useToast();
   const mapContainer = useRef(null);
   const map = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
   
-  // Mock property data - in a real app, you would fetch this from API
-  const [property, setProperty] = useState({
-    id: id || "new",
-    name: id ? "Sunshine Apartments" : "",
-    address: id ? "123 Main Street, Nairobi" : "",
-    description: id ? "A beautiful apartment complex with modern amenities" : "",
-    units: id ? 12 : 0,
-    occupiedUnits: id ? 10 : 0,
-    rent: id ? 25000 : 0,
-    location: {
-      latitude: -1.286389,
-      longitude: 36.817223
-    },
-    amenities: id ? "Swimming pool, Gym, Security, Parking" : "",
-    rules: id ? "No pets, No smoking" : ""
-  });
+  const [property, setProperty] = useState<Partial<Property>>({});
+
+  useEffect(() => {
+    if (id && id !== "new") {
+      const fetchProperty = async () => {
+        setIsLoading(true);
+        try {
+          const response = await apiClient.getProperty(id);
+          if (response.success) {
+            setProperty(response.data);
+          } else {
+            toast({
+              title: "Error",
+              description: "Failed to fetch property details",
+              variant: "destructive",
+            });
+          }
+        } catch (error: unknown) {
+          const message = error instanceof Error ? error.message : "Failed to fetch property details";
+          toast({
+            title: "Error",
+            description: message,
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchProperty();
+    }
+  }, [id, toast]);
 
   // Initialize map
   useEffect(() => {
@@ -118,15 +136,30 @@ export function PropertyDetailsView() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you would save the property to your database
-    toast({
-      title: "Success",
-      description: `Property ${id ? "updated" : "created"} successfully`,
-    });
-    
-    navigate("/landlord/properties");
+    setIsLoading(true);
+    try {
+      if (id && id !== "new") {
+        await apiClient.updateProperty(id, property);
+      } else {
+        await apiClient.createProperty(property);
+      }
+      toast({
+        title: "Success",
+        description: `Property ${id ? "updated" : "created"} successfully`,
+      });
+      navigate("/landlord/properties");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to save property";
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -292,9 +325,9 @@ export function PropertyDetailsView() {
         </Card>
         
         <div className="flex justify-end">
-          <Button type="submit" className="px-8">
+          <Button type="submit" className="px-8" disabled={isLoading}>
             <Save className="mr-2 h-4 w-4" />
-            {id ? "Update Property" : "Create Property"}
+            {isLoading ? (id ? "Updating..." : "Creating...") : (id ? "Update Property" : "Create Property")}
           </Button>
         </div>
       </form>

@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { apiClient } from "@/lib/api";
 import AccountInfoForm from "./register/AccountInfoForm";
 import PersonalInfoForm from "./register/PersonalInfoForm";
 import TenantHousingForm from "./register/TenantHousingForm";
@@ -15,6 +16,7 @@ const RegisterForm = () => {
   const [formStep, setFormStep] = useState(0);
   const [role, setRole] = useState<"tenant" | "landlord">("tenant");
   const [housingStatus, setHousingStatus] = useState<"looking" | "moving_in" | "invited">("looking");
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -39,24 +41,53 @@ const RegisterForm = () => {
     setFormStep((prev) => prev - 1);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // In a real app, you would submit the form data to your API
-    toast({
-      title: "Registration Successful",
-      description: "Your account has been created. You will receive a verification email shortly.",
-    });
-    
-    // Navigate to confirmation page with user data
-    setTimeout(() => {
-      navigate("/registration-pending", { 
-        state: { 
-          role, 
-          housingStatus: role === "tenant" ? housingStatus : null 
-        } 
+    setIsLoading(true);
+
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
       });
-    }, 2000);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await apiClient.register({
+        name: formData.fullName,
+        email: formData.email,
+        phone: formData.phoneNumber,
+        password: formData.password,
+        password_confirmation: formData.confirmPassword,
+        role: role,
+      });
+
+      if (response.success) {
+        toast({
+          title: "Registration Successful",
+          description: "Your account has been created. Please log in.",
+        });
+        navigate("/login");
+      } else {
+        toast({
+          title: "Registration Failed",
+          description: response.message || "An error occurred during registration.",
+          variant: "destructive",
+        });
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "An error occurred during registration.";
+      toast({
+        title: "Registration Failed",
+        description: message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Get the card description based on the current form step and role
@@ -75,21 +106,23 @@ const RegisterForm = () => {
       <CardContent>
         <form onSubmit={handleSubmit}>
           {formStep === 0 && (
-            <AccountInfoForm 
-              formData={formData} 
-              role={role} 
-              onRoleChange={setRole} 
-              onFormDataChange={handleChange} 
+            <AccountInfoForm
+              formData={formData}
+              role={role}
+              onRoleChange={setRole}
+              onFormDataChange={handleChange}
               onNext={handleNext}
+              isLoading={isLoading}
             />
           )}
 
           {formStep === 1 && (
-            <PersonalInfoForm 
-              formData={formData} 
-              onFormDataChange={handleChange} 
-              onBack={handleBack} 
+            <PersonalInfoForm
+              formData={formData}
+              onFormDataChange={handleChange}
+              onBack={handleBack}
               onNext={handleNext}
+              isLoading={isLoading}
             />
           )}
 
@@ -102,13 +135,15 @@ const RegisterForm = () => {
               onPropertyChange={(value) => setFormData((prev) => ({ ...prev, propertyId: value }))}
               onBack={handleBack}
               onSubmit={handleSubmit}
+              isLoading={isLoading}
             />
           )}
 
           {formStep === 2 && role === "landlord" && (
-            <LandlordFinalForm 
-              onBack={handleBack} 
+            <LandlordFinalForm
+              onBack={handleBack}
               onSubmit={handleSubmit}
+              isLoading={isLoading}
             />
           )}
         </form>

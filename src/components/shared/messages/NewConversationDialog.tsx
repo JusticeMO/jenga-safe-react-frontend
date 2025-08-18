@@ -12,21 +12,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Search } from "lucide-react";
-
-interface Contact {
-  id: string;
-  name: string;
-  role: string;
-  apartment?: string;
-  avatar: string;
-}
+import { User } from "@/types";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface NewConversationDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
-  contacts: Contact[];
+  contacts: User[];
   userRole: "tenant" | "landlord";
-  onStartConversation: (contact: Contact) => void;
+  onStartConversation: (contact: User, subject: string, content: string) => void;
 }
 
 export function NewConversationDialog({
@@ -37,16 +32,30 @@ export function NewConversationDialog({
   onStartConversation
 }: NewConversationDialogProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedContact, setSelectedContact] = useState<User | null>(null);
+  const [subject, setSubject] = useState("");
+  const [content, setContent] = useState("");
 
   const filteredContacts = contacts.filter(contact => 
-    // For landlords, show only tenants; for tenants, show only non-tenants
-    (userRole === "landlord" ? contact.role === "Tenant" : contact.role !== "Tenant") && 
-    (contact.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-     (contact.apartment && contact.apartment.toLowerCase().includes(searchTerm.toLowerCase())))
+    (userRole === "landlord" ? contact.role === "tenant" : contact.role !== "tenant") &&
+    (contact.name.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  const handleStartConversation = () => {
+    if (selectedContact && subject && content) {
+      onStartConversation(selectedContact, subject, content);
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      onOpenChange(open);
+      if (!open) {
+        setSelectedContact(null);
+        setSubject("");
+        setContent("");
+      }
+    }}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>New Conversation</DialogTitle>
@@ -56,50 +65,65 @@ export function NewConversationDialog({
         </DialogHeader>
         
         <div className="py-4">
-          <div className="mb-4">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-              <Input 
-                placeholder={`Search ${userRole === "landlord" ? "tenants" : "contacts"}...`}
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-2 max-h-[300px] overflow-y-auto">
-            {filteredContacts.map(contact => (
-              <div 
-                key={contact.id}
-                className="p-2 rounded-md cursor-pointer hover:bg-gray-100 flex items-center space-x-3"
-                onClick={() => onStartConversation(contact)}
-              >
-                <Avatar>
-                  <img 
-                    src={contact.avatar} 
-                    alt={contact.name} 
-                    className="rounded-full"
+          {!selectedContact ? (
+            <>
+              <div className="mb-4">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder={`Search ${userRole === "landlord" ? "tenants" : "contacts"}...`}
+                    className="pl-8"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   />
-                </Avatar>
-                <div>
-                  <p className="font-medium text-sm">{contact.name}</p>
-                  <p className="text-xs text-gray-500">
-                    {contact.role}
-                    {contact.apartment ? ` - ${contact.apartment}` : ''}
-                  </p>
                 </div>
               </div>
-            ))}
-            
-            {filteredContacts.length === 0 && (
-              <p className="text-center text-gray-500 py-4">No contacts found</p>
-            )}
-          </div>
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                {filteredContacts.map(contact => (
+                  <div
+                    key={contact.id}
+                    className="p-2 rounded-md cursor-pointer hover:bg-gray-100 flex items-center space-x-3"
+                    onClick={() => setSelectedContact(contact)}
+                  >
+                    <Avatar>
+                      <img
+                        src={contact.profile_picture || "/placeholder.svg"}
+                        alt={contact.name}
+                        className="rounded-full"
+                      />
+                    </Avatar>
+                    <div>
+                      <p className="font-medium text-sm">{contact.name}</p>
+                      <p className="text-xs text-gray-500">{contact.role}</p>
+                    </div>
+                  </div>
+                ))}
+                {filteredContacts.length === 0 && (
+                  <p className="text-center text-gray-500 py-4">No contacts found</p>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <Label>To:</Label>
+                <p className="font-medium">{selectedContact.name}</p>
+              </div>
+              <div>
+                <Label htmlFor="subject">Subject</Label>
+                <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="content">Message</Label>
+                <Textarea id="content" value={content} onChange={(e) => setContent(e.target.value)} />
+              </div>
+            </div>
+          )}
         </div>
         
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          {selectedContact && <Button onClick={handleStartConversation}>Send Message</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>

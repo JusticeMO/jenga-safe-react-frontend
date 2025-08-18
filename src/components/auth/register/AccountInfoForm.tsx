@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,6 +12,7 @@ interface AccountInfoFormProps {
     confirmPassword: string;
   };
   role: "tenant" | "landlord";
+  isLoading: boolean;
   onRoleChange: (role: "tenant" | "landlord") => void;
   onFormDataChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onNext: () => void;
@@ -24,6 +24,7 @@ const AccountInfoForm = ({
   onRoleChange,
   onFormDataChange,
   onNext,
+  isLoading,
 }: AccountInfoFormProps) => {
   const { toast } = useToast();
 
@@ -108,8 +109,8 @@ const AccountInfoForm = ({
       </div>
 
       <div className="flex justify-end mt-6">
-        <Button onClick={handleNext}>
-          Next
+        <Button onClick={handleNext} disabled={isLoading}>
+          {isLoading ? "Loading..." : "Next"}
         </Button>
       </div>
     </div>

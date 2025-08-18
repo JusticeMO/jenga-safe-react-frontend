@@ -5,21 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Search } from "lucide-react";
-
-interface Conversation {
-  id: string;
-  name: string;
-  role: string;
-  lastMessage: string;
-  time: string;
-  unread: number;
-  avatar: string;
-}
+import { Message } from "@/types";
 
 interface ConversationListProps {
-  conversations: Conversation[];
-  selectedConversation: Conversation;
-  onSelectConversation: (conversation: Conversation) => void;
+  conversations: Message[];
+  selectedConversation: Message | null;
+  onSelectConversation: (conversation: Message) => void;
 }
 
 export function ConversationList({ 
@@ -30,8 +21,8 @@ export function ConversationList({
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredConversations = conversations.filter(conv =>
-    conv.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conv.lastMessage.toLowerCase().includes(searchTerm.toLowerCase())
+    conv.from.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    conv.subject.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -52,29 +43,29 @@ export function ConversationList({
       <CardContent className="flex-1 overflow-y-auto">
         <div className="space-y-2">
           {filteredConversations.map((conversation) => (
-            <div 
+            <div
               key={conversation.id}
               className={`p-2 rounded-md cursor-pointer flex items-center space-x-3 ${
-                selectedConversation.id === conversation.id ? "bg-primary/10" : "hover:bg-gray-100"
+                selectedConversation?.id === conversation.id ? "bg-primary/10" : "hover:bg-gray-100"
               }`}
               onClick={() => onSelectConversation(conversation)}
             >
               <Avatar>
-                <img 
-                  src={conversation.avatar} 
-                  alt={conversation.name} 
+                <img
+                  src={"/placeholder.svg"}
+                  alt={conversation.from}
                   className="rounded-full"
                 />
               </Avatar>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-center">
-                  <span className="font-medium text-sm">{conversation.name}</span>
-                  <span className="text-xs text-gray-500">{conversation.time}</span>
+                  <span className="font-medium text-sm">{conversation.from}</span>
+                  <span className="text-xs text-gray-500">{new Date(conversation.date).toLocaleTimeString()}</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <p className="text-xs text-gray-500 truncate">{conversation.lastMessage}</p>
-                  {conversation.unread > 0 && (
-                    <Badge className="ml-2" variant="secondary">{conversation.unread}</Badge>
+                  <p className="text-xs text-gray-500 truncate">{conversation.subject}</p>
+                  {conversation.read === false && (
+                    <Badge className="ml-2" variant="secondary">New</Badge>
                   )}
                 </div>
               </div>

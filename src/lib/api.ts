@@ -1,3 +1,6 @@
+import { ApiResponse } from "@/types/api";
+import { User, Property, Payment, Message, MaintenanceRequest, Bill, UserRole } from "@/types";
+
 const API_BASE_URL = 'http://localhost:8000/api';
 
 // API client with token management
@@ -18,7 +21,7 @@ class ApiClient {
     localStorage.removeItem('auth_token');
   }
 
-  private async request(endpoint: string, options: RequestInit = {}) {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     const url = `${API_BASE_URL}${endpoint}`;
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
@@ -43,21 +46,21 @@ class ApiClient {
   }
 
   // Auth endpoints
-  async requestOTP(input: string, password: string, role: 'tenant' | 'landlord') {
+  async requestOTP(input: string, password: string, role: UserRole) {
     return this.request('/auth/request-otp', {
       method: 'POST',
       body: JSON.stringify({ input, password, role }),
     });
   }
 
-  async login(input: string, password: string, otp: string) {
-    const response = await this.request('/auth/login', {
+  async login(input: string, password: string, otp: string): Promise<ApiResponse<{ user: User; token: string }>> {
+    const response = await this.request<{ user: User; token: string }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ input, password, otp }),
     });
 
-    if (response.success && response.token) {
-      this.setToken(response.token);
+    if (response.success && response.data?.token) {
+      this.setToken(response.data.token);
     }
 
     return response;
@@ -69,192 +72,247 @@ class ApiClient {
     phone?: string;
     password: string;
     password_confirmation: string;
-    role: 'tenant' | 'landlord';
-  }) {
-    const response = await this.request('/auth/register', {
+    role: UserRole;
+  }): Promise<ApiResponse<{ user: User; token: string }>> {
+    const response = await this.request<{ user: User; token: string }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     });
 
-    if (response.success && response.token) {
-      this.setToken(response.token);
+    if (response.success && response.data?.token) {
+      this.setToken(response.data.token);
     }
 
     return response;
   }
 
-  async logout() {
+  async logout(): Promise<ApiResponse<null>> {
     try {
-      await this.request('/auth/logout', { method: 'POST' });
+      return await this.request('/auth/logout', { method: 'POST' });
     } finally {
       this.clearToken();
     }
   }
 
-  async getUser() {
-    return this.request('/auth/user');
+  async getUser(): Promise<ApiResponse<{ user: User }>> {
+    return this.request<{ user: User }>('/auth/user');
   }
 
-  async updateProfile(data: { name?: string; phone?: string; profile_picture?: string }) {
-    return this.request('/auth/profile', {
+  async updateProfile(data: Partial<User>): Promise<ApiResponse<{ user: User }>> {
+    return this.request<{ user: User }>('/auth/profile', {
       method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async startConversation(data: { recipientId: string; subject: string; content: string }): Promise<ApiResponse<Message>> {
+    return this.request<Message>('/messages/start', {
+      method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   // Dashboard endpoints
-  async getDashboard() {
-    return this.request('/dashboard');
+  async getDashboard(): Promise<ApiResponse<Dashboard>> {
+    return this.request<Dashboard>('/dashboard');
   }
 
-  async getDashboardStats() {
-    return this.request('/dashboard/stats');
+  async getDashboardStats(): Promise<ApiResponse<DashboardStats>> {
+    return this.request<DashboardStats>('/dashboard/stats');
   }
 
   // Property endpoints
-  async getProperties() {
-    return this.request('/properties');
+  async getProperties(): Promise<ApiResponse<Property[]>> {
+    return this.request<Property[]>('/properties');
   }
 
-  async getProperty(id: string) {
-    return this.request(`/properties/${id}`);
+  async getProperty(id: string): Promise<ApiResponse<Property>> {
+    return this.request<Property>(`/properties/${id}`);
   }
 
-  async createProperty(data: any) {
-    return this.request('/properties', {
+  async createProperty(data: Partial<Property>): Promise<ApiResponse<Property>> {
+    return this.request<Property>('/properties', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updateProperty(id: string, data: any) {
-    return this.request(`/properties/${id}`, {
+  async updateProperty(id: string, data: Partial<Property>): Promise<ApiResponse<Property>> {
+    return this.request<Property>(`/properties/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  async deleteProperty(id: string) {
-    return this.request(`/properties/${id}`, { method: 'DELETE' });
+  async deleteProperty(id: string): Promise<ApiResponse<null>> {
+    return this.request<null>(`/properties/${id}`, { method: 'DELETE' });
   }
 
   // Payment endpoints
-  async getPayments() {
-    return this.request('/payments');
+  async getPayments(): Promise<ApiResponse<Payment[]>> {
+    return this.request<Payment[]>('/payments');
   }
 
-  async getPaymentHistory() {
-    return this.request('/payments/history');
+  async getPaymentHistory(): Promise<ApiResponse<Payment[]>> {
+    return this.request<Payment[]>('/payments/history');
   }
 
-  async createPayment(data: any) {
-    return this.request('/payments', {
+  async createPayment(data: Partial<Payment>): Promise<ApiResponse<Payment>> {
+    return this.request<Payment>('/payments', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async markPaymentCompleted(id: string, data: any) {
-    return this.request(`/payments/${id}/mark-completed`, {
+  async markPaymentCompleted(id: string, data: { receipt: string }): Promise<ApiResponse<Payment>> {
+    return this.request<Payment>(`/payments/${id}/mark-completed`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   // Message endpoints
-  async getMessages() {
-    return this.request('/messages');
+  async getMessages(): Promise<ApiResponse<Message[]>> {
+    return this.request<Message[]>('/messages');
   }
 
-  async sendMessage(data: any) {
-    return this.request('/messages', {
+  async getMessagesForConversation(conversationId: string): Promise<ApiResponse<Message[]>> {
+    return this.request<Message[]>(`/messages/${conversationId}`);
+  }
+
+  async sendMessage(data: Partial<Message>): Promise<ApiResponse<Message>> {
+    return this.request<Message>('/messages', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async markMessageRead(id: string) {
-    return this.request(`/messages/${id}/mark-read`, { method: 'POST' });
+  async markMessageRead(id: string): Promise<ApiResponse<Message>> {
+    return this.request<Message>(`/messages/${id}/mark-read`, { method: 'POST' });
   }
 
-  async getUnreadCount() {
-    return this.request('/messages/unread-count');
+  async getUnreadCount(): Promise<ApiResponse<{ count: number }>> {
+    return this.request<{ count: number }>('/messages/unread-count');
   }
 
   // Maintenance request endpoints
-  async getMaintenanceRequests() {
-    return this.request('/maintenance-requests');
+  async getMaintenanceRequests(): Promise<ApiResponse<MaintenanceRequest[]>> {
+    return this.request<MaintenanceRequest[]>('/maintenance-requests');
   }
 
-  async createMaintenanceRequest(data: any) {
-    return this.request('/maintenance-requests', {
+  async createMaintenanceRequest(data: Partial<MaintenanceRequest>): Promise<ApiResponse<MaintenanceRequest>> {
+    return this.request<MaintenanceRequest>('/maintenance-requests', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updateMaintenanceRequest(id: string, data: any) {
-    return this.request(`/maintenance-requests/${id}`, {
+  async updateMaintenanceRequest(id: string, data: Partial<MaintenanceRequest>): Promise<ApiResponse<MaintenanceRequest>> {
+    return this.request<MaintenanceRequest>(`/maintenance-requests/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
   // Bill endpoints
-  async getBills() {
-    return this.request('/bills');
+  async getBills(): Promise<ApiResponse<Bill[]>> {
+    return this.request<Bill[]>('/bills');
   }
 
-  async markBillPaid(id: string, data: any) {
-    return this.request(`/bills/${id}/mark-paid`, {
+  async markBillPaid(id: string, data: { transaction_id: string }): Promise<ApiResponse<Bill>> {
+    return this.request<Bill>(`/bills/${id}/mark-paid`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
   // Tenant-specific endpoints
-  async getMyUnit() {
-    return this.request('/tenant/property-unit');
+  async getMyUnit(): Promise<ApiResponse<Unit>> {
+    return this.request<Unit>('/tenant/property-unit');
   }
 
-  async getMyPayments() {
-    return this.request('/tenant/payments');
+  async getMyPayments(): Promise<ApiResponse<Payment[]>> {
+    return this.request<Payment[]>('/tenant/payments');
   }
 
-  async getMyBills() {
-    return this.request('/tenant/bills');
+  async getMyBills(): Promise<ApiResponse<Bill[]>> {
+    return this.request<Bill[]>('/tenant/bills');
   }
 
-  async getMyMaintenanceRequests() {
-    return this.request('/tenant/maintenance-requests');
+  async getMyMaintenanceRequests(): Promise<ApiResponse<MaintenanceRequest[]>> {
+    return this.request<MaintenanceRequest[]>('/tenant/maintenance-requests');
   }
 
-  async getMyMessages() {
-    return this.request('/tenant/messages');
+  async getMyMessages(): Promise<ApiResponse<Message[]>> {
+    return this.request<Message[]>('/tenant/messages');
   }
 
   // Landlord-specific endpoints
-  async getMyProperties() {
-    return this.request('/landlord/properties');
+  async getMyProperties(): Promise<ApiResponse<Property[]>> {
+    return this.request<Property[]>('/landlord/properties');
   }
 
-  async getMyTenants() {
-    return this.request('/landlord/tenants');
+  async getMyTenants(): Promise<ApiResponse<User[]>> {
+    return this.request<User[]>('/landlord/tenants');
   }
 
-  async getLandlordMaintenanceRequests() {
-    return this.request('/landlord/maintenance-requests');
+  async getLandlordMaintenanceRequests(): Promise<ApiResponse<MaintenanceRequest[]>> {
+    return this.request<MaintenanceRequest[]>('/landlord/maintenance-requests');
   }
 
-  async getLandlordPayments() {
-    return this.request('/landlord/payments');
+  async getLandlordPayments(): Promise<ApiResponse<Payment[]>> {
+    return this.request<Payment[]>('/landlord/payments');
   }
 
-  async getReports() {
-    return this.request('/landlord/reports');
+  async getReports(): Promise<ApiResponse<Report>> {
+    return this.request<Report>('/landlord/reports');
+  }
+
+  async getDocuments(): Promise<ApiResponse<Document[]>> {
+    return this.request<Document[]>('/documents');
+  }
+
+  async getEmergencyContacts(): Promise<ApiResponse<EmergencyContact[]>> {
+    return this.request<EmergencyContact[]>('/emergency-contacts');
+  }
+
+  async initiateSTKPush(data: { amount: number; phoneNumber: string }): Promise<ApiResponse<null>> {
+    return this.request<null>('/payments/stk-push', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async fileComplaint(data: Partial<Complaint>): Promise<ApiResponse<Complaint>> {
+    return this.request<Complaint>('/complaints', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getGarbageServiceHistory(): Promise<ApiResponse<GarbageServiceHistory[]>> {
+    return this.request<GarbageServiceHistory[]>('/garbage-service-history');
+  }
+
+  async getAvailableProperties(): Promise<ApiResponse<Property[]>> {
+    return this.request<Property[]>('/properties/available');
+  }
+
+  async getChatMessages(): Promise<ApiResponse<ChatMessage[]>> {
+    return this.request<ChatMessage[]>('/chat/messages');
+  }
+
+  async sendChatMessage(data: { content: string }): Promise<ApiResponse<ChatMessage>> {
+    return this.request<ChatMessage>('/chat/messages', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getWaterUsageHistory(): Promise<ApiResponse<WaterUsageHistory[]>> {
+    return this.request<WaterUsageHistory[]>('/water-usage-history');
   }
 }
 
 export const apiClient = new ApiClient();
 export default apiClient;
-

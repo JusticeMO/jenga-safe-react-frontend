@@ -9,6 +9,7 @@ import { TenantProfile } from "./dashboard/TenantProfile";
 import { InviteCodeSection } from "./dashboard/InviteCodeSection";
 import { useAuth } from "@/context/AuthContext";
 import { useEffect, useState } from "react";
+import { PropertyInfo } from "@/types";
 
 export function TenantDashboard() {
   const navigate = useNavigate();
@@ -17,14 +18,14 @@ export function TenantDashboard() {
   
   // State for property assignment and details
   const [hasAssignedProperty, setHasAssignedProperty] = useState(false);
-  const [propertyInfo, setPropertyInfo] = useState<any>(null);
+  const [propertyInfo, setPropertyInfo] = useState<PropertyInfo | null>(null);
   
   // Check if tenant has been assigned a property from localStorage on component mount
   useEffect(() => {
     const storedHasProperty = localStorage.getItem('tenantHasProperty') === 'true';
     const storedPropertyDetails = localStorage.getItem('propertyDetails');
     
-    setHasAssignedProperty(user?.hasAssignedProperty || storedHasProperty);
+    setHasAssignedProperty(user?.has_assigned_property || storedHasProperty);
     
     if (storedPropertyDetails) {
       try {
@@ -33,7 +34,7 @@ export function TenantDashboard() {
       } catch (e) {
         console.error("Error parsing property details from localStorage:", e);
       }
-    } else if (user?.hasAssignedProperty) {
+    } else if (user?.has_assigned_property) {
       // Fallback to mock data if user has property but no stored details
       setPropertyInfo({
         propertyName: "Westlands Heights",
@@ -48,7 +49,7 @@ export function TenantDashboard() {
   }, [user]);
   
   // Handle successful property registration
-  const handleSuccessfulRegistration = (propertyDetails: any) => {
+  const handleSuccessfulRegistration = (propertyDetails: PropertyInfo) => {
     setHasAssignedProperty(true);
     setPropertyInfo(propertyDetails);
   };

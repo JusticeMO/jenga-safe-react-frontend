@@ -1,19 +1,8 @@
-
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { useState, ReactNode, useEffect } from 'react';
 import { User, UserRole } from '../types';
 import { useToast } from '@/hooks/use-toast';
 import apiClient from '../lib/api';
-
-interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string, otp: string) => Promise<boolean>;
-  requestOTP: (email: string, password: string, role: UserRole) => Promise<boolean>;
-  logout: () => void;
-  isAuthenticated: boolean;
-  loading: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext } from './AuthContext-context';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -28,14 +17,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
           const response = await apiClient.getUser();
           if (response.success) {
-            setUser({
-              id: response.user.id,
-              name: response.user.name,
-              email: response.user.email,
-              role: response.user.role,
-              avatar: response.user.profile_picture,
-              hasAssignedProperty: response.user.has_assigned_property,
-            });
+            setUser(response.user);
           }
         } catch (error) {
           console.error('Auth check failed:', error);
@@ -66,10 +48,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         return false;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to send OTP";
       toast({
         title: "Error",
-        description: error.message || "Failed to send OTP",
+        description: message,
         variant: "destructive",
       });
       return false;
@@ -81,14 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await apiClient.login(input, password, otp);
       
       if (response.success) {
-        setUser({
-          id: response.user.id,
-          name: response.user.name,
-          email: response.user.email,
-          role: response.user.role,
-          avatar: response.user.profile_picture,
-          hasAssignedProperty: response.user.has_assigned_property,
-        });
+        setUser(response.user);
 
         toast({
           title: "Success",
@@ -103,10 +79,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         return false;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Login failed";
       toast({
         title: "Error",
-        description: error.message || "Login failed",
+        description: message,
         variant: "destructive",
       });
       return false;
@@ -137,12 +114,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 }

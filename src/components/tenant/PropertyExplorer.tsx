@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,87 +21,12 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-
-// Mock properties data with expanded details
-const mockProperties = [
-  {
-    id: "prop1",
-    name: "Sunshine Apartments",
-    address: "123 Main Street, Nairobi",
-    price: 25000,
-    bedrooms: 2,
-    bathrooms: 1,
-    size: 75, // in square meters
-    type: "Apartment",
-    imageUrl: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    available: true,
-    vacating: false,
-    location: {
-      lat: -1.286389,
-      lng: 36.817223
-    },
-    images: [
-      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-      "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-      "https://images.unsplash.com/photo-1565183928294-7063f23ce0f8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80"
-    ],
-    vrTourUrl: "https://my.matterport.com/show/?m=CiHSocFxnKM",
-    videoTourUrl: "https://www.youtube.com/embed/9YffrCViTVk"
-  },
-  {
-    id: "prop2",
-    name: "Riverside Villas",
-    address: "456 Park Avenue, Mombasa",
-    price: 45000,
-    bedrooms: 3,
-    bathrooms: 2,
-    size: 120, // in square meters
-    type: "Villa",
-    imageUrl: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    available: true,
-    vacating: false,
-    location: {
-      lat: -4.043740,
-      lng: 39.658871
-    },
-    images: [
-      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-      "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-      "https://images.unsplash.com/photo-1600585152220-90363fe7e115?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80"
-    ],
-    vrTourUrl: "https://my.matterport.com/show/?m=SuTAus5q7Cy",
-    videoTourUrl: "https://www.youtube.com/embed/KNrPBbn0d8Q"
-  },
-  {
-    id: "prop3",
-    name: "Mountain View Residences",
-    address: "789 Garden Road, Nakuru",
-    price: 18000,
-    bedrooms: 1,
-    bathrooms: 1,
-    size: 55, // in square meters
-    type: "Studio",
-    imageUrl: "https://images.unsplash.com/photo-1493809842364-78817add7ffb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    available: false,
-    vacating: true,
-    vacatingDate: "2025-06-30",
-  },
-  {
-    id: "prop4",
-    name: "City Center Apartments",
-    address: "101 Urban Street, Nairobi",
-    price: 30000,
-    bedrooms: 2,
-    bathrooms: 1,
-    size: 80, // in square meters
-    type: "Apartment",
-    imageUrl: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2340&q=80",
-    available: false,
-    vacating: false,
-  },
-];
+import { apiClient } from "@/lib/api";
+import { Property } from "@/types";
+import { useToast } from "@/hooks/use-toast";
 
 export function PropertyExplorerView() {
+  const { toast } = useToast();
   const [filters, setFilters] = useState({
     location: "",
     minPrice: "",
@@ -111,9 +36,40 @@ export function PropertyExplorerView() {
     availabilityFilter: "all", // "all", "available", "vacating"
   });
   
-  const [properties, setProperties] = useState(mockProperties);
-  const [selectedProperty, setSelectedProperty] = useState<typeof mockProperties[0] | null>(null);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchProperties = async () => {
+      setIsLoading(true);
+      try {
+        const response = await apiClient.getAvailableProperties();
+        if (response.success) {
+          setProperties(response.data);
+          setFilteredProperties(response.data);
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to fetch properties",
+            variant: "destructive",
+          });
+        }
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to fetch properties";
+        toast({
+          title: "Error",
+          description: message,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProperties();
+  }, [toast]);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -125,7 +81,7 @@ export function PropertyExplorerView() {
   };
 
   const applyFilters = () => {
-    let filtered = mockProperties;
+    let filtered = properties;
 
     if (filters.location) {
       filtered = filtered.filter(property => 
@@ -163,7 +119,7 @@ export function PropertyExplorerView() {
       filtered = filtered.filter(property => property.vacating);
     }
 
-    setProperties(filtered);
+    setFilteredProperties(filtered);
   };
 
   const resetFilters = () => {
@@ -175,10 +131,10 @@ export function PropertyExplorerView() {
       propertyType: "",
       availabilityFilter: "all",
     });
-    setProperties(mockProperties);
+    setFilteredProperties(properties);
   };
 
-  const viewPropertyDetails = (property: typeof mockProperties[0]) => {
+  const viewPropertyDetails = (property: Property) => {
     setSelectedProperty(property);
     setActiveTab("overview");
   };
@@ -187,7 +143,7 @@ export function PropertyExplorerView() {
     setSelectedProperty(null);
   };
 
-  const getAvailabilityBadge = (property: typeof mockProperties[0]) => {
+  const getAvailabilityBadge = (property: Property) => {
     if (property.available) {
       return <Badge className="bg-[#F2FCE2] text-green-800 hover:bg-green-100">Vacant</Badge>;
     } else if (property.vacating) {
@@ -210,6 +166,10 @@ export function PropertyExplorerView() {
       return <Badge className="bg-red-100 text-[#ea384c] hover:bg-red-200">Occupied</Badge>;
     }
   };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -553,8 +513,8 @@ export function PropertyExplorerView() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {properties.length > 0 ? (
-            properties.map(property => (
+          {filteredProperties.length > 0 ? (
+            filteredProperties.map(property => (
               <Card key={property.id} className="overflow-hidden">
                 <div className="aspect-video w-full overflow-hidden">
                   <img 
@@ -616,7 +576,7 @@ export function PropertyExplorerView() {
       )}
     </div>
   );
-};
+}
 
 // Import Label component at the top
 const Label = ({ children, htmlFor, className = "" }) => (
