@@ -1,10 +1,11 @@
 
 import { Calendar, DollarSign, Info } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { PropertyInfo } from "@/types";
 
 interface PropertyStatsProps {
   hasAssignedProperty?: boolean;
-  propertyInfo?: any;
+  propertyInfo?: PropertyInfo | null;
   unreadMessages?: number;
 }
 

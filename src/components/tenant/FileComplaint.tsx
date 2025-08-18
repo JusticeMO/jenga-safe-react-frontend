@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,23 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Upload, AlertTriangle, CheckCircle, Clock } from "lucide-react";
-
-const recentComplaints = [
-  {
-    id: 1,
-    title: "Water Leakage in Bathroom",
-    status: "In Progress",
-    submittedDate: "June 15, 2023",
-    statusColor: "bg-yellow-100 text-yellow-800"
-  },
-  {
-    id: 2,
-    title: "Broken Window Lock",
-    status: "Resolved",
-    submittedDate: "May 23, 2023",
-    statusColor: "bg-green-100 text-green-800"
-  }
-];
+import { apiClient } from "@/lib/api";
+import { Complaint } from "@/types";
 
 const complaintGuidelines = [
   "Provide clear and specific details about the issue",
@@ -44,6 +28,16 @@ export function FileComplaint() {
     contactMethod: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recentComplaints, setRecentComplaints] = useState<Complaint[]>([]);
+
+  useEffect(() => {
+    const fetchRecentComplaints = async () => {
+      // In a real app, you would fetch recent complaints from the API
+      // For now, we'll just use an empty array
+      setRecentComplaints([]);
+    };
+    fetchRecentComplaints();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,23 +53,39 @@ export function FileComplaint() {
     
     setIsSubmitting(true);
     
-    // Simulate form submission
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const response = await apiClient.fileComplaint(formData);
+      if (response.success) {
+        toast({
+          title: "Complaint Submitted",
+          description: "Your complaint has been received and will be reviewed within 48 hours",
+        });
+        setRecentComplaints(prev => [response.data, ...prev]);
+        // Reset form
+        setFormData({
+          complaintType: "",
+          subject: "",
+          description: "",
+          urgencyLevel: "",
+          contactMethod: ""
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to submit complaint",
+          variant: "destructive",
+        });
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to submit complaint";
       toast({
-        title: "Complaint Submitted",
-        description: "Your complaint has been received and will be reviewed within 48 hours",
+        title: "Error",
+        description: message,
+        variant: "destructive",
       });
-      
-      // Reset form
-      setFormData({
-        complaintType: "",
-        subject: "",
-        description: "",
-        urgencyLevel: "",
-        contactMethod: ""
-      });
-    }, 2000);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -197,11 +207,9 @@ export function FileComplaint() {
             <CardContent className="space-y-3">
               {recentComplaints.map((complaint) => (
                 <div key={complaint.id} className="border rounded-md p-3">
-                  <h4 className="font-medium text-sm">{complaint.title}</h4>
-                  <p className="text-xs text-gray-500 mb-2">Submitted: {complaint.submittedDate}</p>
-                  <Badge className={complaint.statusColor}>
-                    {complaint.status === "In Progress" && <Clock className="mr-1 h-3 w-3" />}
-                    {complaint.status === "Resolved" && <CheckCircle className="mr-1 h-3 w-3" />}
+                  <h4 className="font-medium text-sm">{complaint.subject}</h4>
+                  <p className="text-xs text-gray-500 mb-2">Submitted: {new Date(complaint.createdAt).toLocaleDateString()}</p>
+                  <Badge>
                     {complaint.status}
                   </Badge>
                 </div>

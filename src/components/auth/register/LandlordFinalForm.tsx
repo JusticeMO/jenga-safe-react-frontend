@@ -1,13 +1,13 @@
 
-import React from "react";
 import { Button } from "@/components/ui/button";
 
 interface LandlordFinalFormProps {
+  isLoading: boolean;
   onBack: () => void;
   onSubmit: (e: React.FormEvent) => void;
 }
 
-const LandlordFinalForm = ({ onBack, onSubmit }: LandlordFinalFormProps) => {
+const LandlordFinalForm = ({ onBack, onSubmit, isLoading }: LandlordFinalFormProps) => {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
@@ -18,15 +18,16 @@ const LandlordFinalForm = ({ onBack, onSubmit }: LandlordFinalFormProps) => {
       </div>
 
       <div className="flex justify-between mt-6">
-        <Button type="button" variant="outline" onClick={onBack}>
+        <Button type="button" variant="outline" onClick={onBack} disabled={isLoading}>
           Back
         </Button>
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           className="bg-[#9b87f5] hover:bg-[#7E69AB]"
           onClick={onSubmit}
+          disabled={isLoading}
         >
-          Register
+          {isLoading ? "Registering..." : "Register"}
         </Button>
       </div>
     </div>

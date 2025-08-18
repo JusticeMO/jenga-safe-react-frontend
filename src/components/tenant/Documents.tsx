@@ -1,74 +1,49 @@
-
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Search, FileText, Download, Upload, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { apiClient } from "@/lib/api";
+import { Document } from "@/types";
+import { useToast } from "@/hooks/use-toast";
 
 export function DocumentsView() {
-  // Mock documents
-  const documents = [
-    {
-      id: "d1",
-      name: "Lease Agreement",
-      category: "Contract",
-      date: "2023-01-15",
-      size: "2.4 MB",
-      type: "PDF",
-      status: "Signed",
-      sender: "Property Management"
-    },
-    {
-      id: "d2",
-      name: "House Rules",
-      category: "Information",
-      date: "2023-01-15",
-      size: "1.2 MB",
-      type: "PDF",
-      status: "Available",
-      sender: "Property Management"
-    },
-    {
-      id: "d3",
-      name: "Rent Receipt - January 2023",
-      category: "Receipt",
-      date: "2023-01-05",
-      size: "0.8 MB",
-      type: "PDF",
-      status: "Available",
-      sender: "Accounting"
-    },
-    {
-      id: "d4",
-      name: "Rent Receipt - February 2023",
-      category: "Receipt",
-      date: "2023-02-03",
-      size: "0.8 MB",
-      type: "PDF",
-      status: "Available",
-      sender: "Accounting"
-    },
-    {
-      id: "d5",
-      name: "Maintenance Policy",
-      category: "Information",
-      date: "2022-12-10",
-      size: "1.5 MB",
-      type: "PDF",
-      status: "Available",
-      sender: "Property Management"
-    },
-    {
-      id: "d6",
-      name: "Property Inspection Report",
-      category: "Report",
-      date: "2023-01-20",
-      size: "3.2 MB",
-      type: "PDF",
-      status: "Available",
-      sender: "Property Management"
-    },
-  ];
+  const { toast } = useToast();
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      setIsLoading(true);
+      try {
+        const response = await apiClient.getDocuments();
+        if (response.success) {
+          setDocuments(response.data);
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to fetch documents",
+            variant: "destructive",
+          });
+        }
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to fetch documents";
+        toast({
+          title: "Error",
+          description: message,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchDocuments();
+  }, [toast]);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -88,7 +63,7 @@ export function DocumentsView() {
             </div>
             <div>
               <p className="text-sm text-gray-500 font-medium">All Documents</p>
-              <p className="text-xl font-bold">12</p>
+              <p className="text-xl font-bold">{documents.length}</p>
             </div>
           </CardContent>
         </Card>
@@ -100,7 +75,7 @@ export function DocumentsView() {
             </div>
             <div>
               <p className="text-sm text-gray-500 font-medium">Contracts</p>
-              <p className="text-xl font-bold">3</p>
+              <p className="text-xl font-bold">{documents.filter(d => d.category === 'Contract').length}</p>
             </div>
           </CardContent>
         </Card>
@@ -112,7 +87,7 @@ export function DocumentsView() {
             </div>
             <div>
               <p className="text-sm text-gray-500 font-medium">Receipts</p>
-              <p className="text-xl font-bold">6</p>
+              <p className="text-xl font-bold">{documents.filter(d => d.category === 'Receipt').length}</p>
             </div>
           </CardContent>
         </Card>
@@ -124,7 +99,7 @@ export function DocumentsView() {
             </div>
             <div>
               <p className="text-sm text-gray-500 font-medium">Information</p>
-              <p className="text-xl font-bold">3</p>
+              <p className="text-xl font-bold">{documents.filter(d => d.category === 'Information').length}</p>
             </div>
           </CardContent>
         </Card>

@@ -1,5 +1,4 @@
 
-import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +19,7 @@ interface TenantHousingFormProps {
     unitNumber: string;
     inviteCode: string;
   };
+  isLoading: boolean;
   onHousingStatusChange: (value: "looking" | "moving_in" | "invited") => void;
   onFormDataChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onPropertyChange: (value: string) => void;
@@ -35,6 +35,7 @@ const TenantHousingForm = ({
   onPropertyChange,
   onBack,
   onSubmit,
+  isLoading,
 }: TenantHousingFormProps) => {
   const verifyInviteCode = () => {
     // For demo purposes, we'll just check if the code is not empty
@@ -136,16 +137,16 @@ const TenantHousingForm = ({
       </div>
 
       <div className="flex justify-between mt-6">
-        <Button type="button" variant="outline" onClick={onBack}>
+        <Button type="button" variant="outline" onClick={onBack} disabled={isLoading}>
           Back
         </Button>
-        <Button 
-          type="submit" 
+        <Button
+          type="submit"
           className="bg-[#9b87f5] hover:bg-[#7E69AB]"
           onClick={onSubmit}
-          disabled={housingStatus === "invited" && !isValidCode}
+          disabled={(housingStatus === "invited" && !isValidCode) || isLoading}
         >
-          Register
+          {isLoading ? "Registering..." : "Register"}
         </Button>
       </div>
     </div>

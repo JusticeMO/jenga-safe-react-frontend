@@ -1,31 +1,54 @@
-
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Droplets, TrendingUp, TrendingDown } from "lucide-react";
-
-const monthlyData = [
-  { month: "January", units: 5, amount: 1000, status: "Paid" },
-  { month: "February", units: 5.5, amount: 1100, status: "Paid" },
-  { month: "March", units: 4.8, amount: 960, status: "Paid" },
-  { month: "April", units: 5.2, amount: 1040, status: "Paid" },
-  { month: "May", units: 5.8, amount: 1160, status: "Paid" },
-  { month: "June", units: 6, amount: 1200, status: "Due with July Rent" }
-];
-
-const chartData = [
-  { month: "Jan", value: 5 },
-  { month: "Feb", value: 5.5 },
-  { month: "Mar", value: 4.8 },
-  { month: "Apr", value: 5.2 },
-  { month: "May", value: 5.8 },
-  { month: "Jun", value: 6 }
-];
+import { apiClient } from "@/lib/api";
+import { WaterUsageHistory } from "@/types";
+import { useToast } from "@/hooks/use-toast";
 
 export function WaterUsage() {
-  const currentMonth = monthlyData[monthlyData.length - 1];
-  const previousMonth = monthlyData[monthlyData.length - 2];
-  const averageUsage = monthlyData.slice(0, -1).reduce((sum, data) => sum + data.units, 0) / (monthlyData.length - 1);
+  const { toast } = useToast();
+  const [monthlyData, setMonthlyData] = useState<WaterUsageHistory[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      setIsLoading(true);
+      try {
+        const response = await apiClient.getWaterUsageHistory();
+        if (response.success) {
+          setMonthlyData(response.data);
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to fetch water usage history",
+            variant: "destructive",
+          });
+        }
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to fetch water usage history";
+        toast({
+          title: "Error",
+          description: message,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchHistory();
+  }, [toast]);
+
+  const currentMonth = monthlyData.length > 0 ? monthlyData[monthlyData.length - 1] : null;
+  const previousMonth = monthlyData.length > 1 ? monthlyData[monthlyData.length - 2] : null;
+  const averageUsage = monthlyData.length > 1 ? monthlyData.slice(0, -1).reduce((sum, data) => sum + data.units, 0) / (monthlyData.length - 1) : 0;
   
+  const chartData = monthlyData.map(d => ({ month: d.month.substring(0, 3), value: d.units }));
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="p-3 md:p-6 space-y-4 md:space-y-6">
       <h1 className="text-xl md:text-2xl font-bold">Water Usage</h1>
@@ -37,8 +60,8 @@ export function WaterUsage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Current Month Usage</p>
-                <p className="text-2xl md:text-3xl font-bold">{currentMonth.units} Units</p>
-                <p className="text-xs text-gray-500">June 2023</p>
+                <p className="text-2xl md:text-3xl font-bold">{currentMonth?.units || 0} Units</p>
+                <p className="text-xs text-gray-500">{currentMonth?.month || ''}</p>
               </div>
               <div className="p-2 rounded-full bg-blue-100">
                 <Droplets className="h-6 w-6 text-blue-600" />
@@ -52,8 +75,8 @@ export function WaterUsage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-500">Current Bill Amount</p>
-                <p className="text-2xl md:text-3xl font-bold">KES {currentMonth.amount.toLocaleString()}</p>
-                <p className="text-xs text-gray-500">{currentMonth.status}</p>
+                <p className="text-2xl md:text-3xl font-bold">KES {currentMonth?.amount.toLocaleString() || "0"}</p>
+                <p className="text-xs text-gray-500">{currentMonth?.status}</p>
               </div>
               <div className="p-2 rounded-full bg-green-100">
                 <span className="text-green-600 font-bold">KES</span>
@@ -71,7 +94,7 @@ export function WaterUsage() {
                 <p className="text-xs text-gray-500">Last 6 Months</p>
               </div>
               <div className="p-2 rounded-full bg-purple-100">
-                {currentMonth.units > averageUsage ? (
+                {currentMonth && currentMonth.units > averageUsage ? (
                   <TrendingUp className="h-6 w-6 text-purple-600" />
                 ) : (
                   <TrendingDown className="h-6 w-6 text-purple-600" />
@@ -130,7 +153,7 @@ export function WaterUsage() {
               <tbody>
                 {monthlyData.map((data, index) => (
                   <tr key={index} className="border-b hover:bg-gray-50">
-                    <td className="p-2">{data.month} 2023</td>
+                    <td className="p-2">{data.month}</td>
                     <td className="p-2">{data.units}</td>
                     <td className="p-2">{data.amount.toLocaleString()}</td>
                     <td className="p-2">

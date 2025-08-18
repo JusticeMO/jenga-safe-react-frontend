@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Card, 
   CardContent, 
@@ -8,7 +7,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -17,82 +15,82 @@ import {
   Users,
   User
 } from "lucide-react";
-
-// Mock messages for the property chat group
-const initialMessages = [
-  {
-    id: "m1",
-    sender: "John Doe",
-    content: "Hello everyone! Just moved into Unit 3B. Nice to meet you all!",
-    time: "10:30 AM",
-    isSelf: true,
-    avatar: "JD"
-  },
-  {
-    id: "m2",
-    sender: "Sarah Smith",
-    content: "Welcome John! I'm in Unit 2A. Let me know if you need any help getting settled.",
-    time: "10:32 AM",
-    isSelf: false,
-    avatar: "SS"
-  },
-  {
-    id: "m3",
-    sender: "Michael Johnson",
-    content: "Hi John, welcome to the building! We're having a small get-together this weekend if you'd like to join.",
-    time: "10:35 AM",
-    isSelf: false,
-    avatar: "MJ"
-  }
-];
+import { apiClient } from "@/lib/api";
+import { ChatMessage } from "@/types";
 
 export function TenantChat() {
   const { toast } = useToast();
-  const [messages, setMessages] = useState(initialMessages);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSendMessage = () => {
+  useEffect(() => {
+    const fetchMessages = async () => {
+      setIsLoading(true);
+      try {
+        const response = await apiClient.getChatMessages();
+        if (response.success) {
+          setMessages(response.data);
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to fetch chat messages",
+            variant: "destructive",
+          });
+        }
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to fetch chat messages";
+        toast({
+          title: "Error",
+          description: message,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchMessages();
+  }, [toast]);
+
+  const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
     
-    const now = new Date();
-    const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    
-    const newMsg = {
-      id: `m${Math.random().toString(36).substring(2, 9)}`,
-      sender: "John Doe",
+    const optimisticMessage: ChatMessage = {
+      id: `temp-${Date.now()}`,
+      sender: "You",
       content: newMessage.trim(),
-      time: timeString,
+      time: new Date().toLocaleTimeString(),
       isSelf: true,
       avatar: "JD"
     };
     
-    setMessages(prev => [...prev, newMsg]);
+    setMessages(prev => [...prev, optimisticMessage]);
     setNewMessage("");
-    
-    // Simulate a reply (for demo purposes)
-    setTimeout(() => {
-      const replyMessages = [
-        "Thanks everyone for the warm welcome!",
-        "Looking forward to meeting you all!",
-        "That sounds great, count me in!",
-        "Appreciate the help offer!"
-      ];
-      
-      const randomReply = replyMessages[Math.floor(Math.random() * replyMessages.length)];
-      const replyTimeString = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      
-      const replyMsg = {
-        id: `m${Math.random().toString(36).substring(2, 9)}`,
-        sender: "John Doe",
-        content: randomReply,
-        time: replyTimeString,
-        isSelf: true,
-        avatar: "JD"
-      };
-      
-      setMessages(prev => [...prev, replyMsg]);
-    }, 2000);
+
+    try {
+      const response = await apiClient.sendChatMessage({ content: newMessage.trim() });
+      if (!response.success) {
+        toast({
+          title: "Error",
+          description: "Failed to send message",
+          variant: "destructive",
+        });
+        setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to send message";
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive",
+      });
+      setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id));
+    }
   };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="p-3 md:p-6 h-full">

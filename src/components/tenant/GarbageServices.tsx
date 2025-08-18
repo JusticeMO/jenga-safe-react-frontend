@@ -1,15 +1,48 @@
-
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Calendar, Clock, Recycle, AlertTriangle } from "lucide-react";
-
-const paymentHistory = [
-  { month: "June 2023", amount: 500, paymentDate: "June 3, 2023", status: "Paid" },
-  { month: "May 2023", amount: 500, paymentDate: "May 5, 2023", status: "Paid" },
-  { month: "April 2023", amount: 500, paymentDate: "April 2, 2023", status: "Paid" }
-];
+import { apiClient } from "@/lib/api";
+import { GarbageServiceHistory } from "@/types";
+import { useToast } from "@/hooks/use-toast";
 
 export function GarbageServices() {
+  const { toast } = useToast();
+  const [paymentHistory, setPaymentHistory] = useState<GarbageServiceHistory[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      setIsLoading(true);
+      try {
+        const response = await apiClient.getGarbageServiceHistory();
+        if (response.success) {
+          setPaymentHistory(response.data);
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to fetch garbage service history",
+            variant: "destructive",
+          });
+        }
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to fetch garbage service history";
+        toast({
+          title: "Error",
+          description: message,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchHistory();
+  }, [toast]);
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="p-3 md:p-6 space-y-4 md:space-y-6">
       <h1 className="text-xl md:text-2xl font-bold">Garbage Services</h1>

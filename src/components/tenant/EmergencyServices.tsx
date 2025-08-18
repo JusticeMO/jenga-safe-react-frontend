@@ -1,76 +1,60 @@
-
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Phone, Heart, Flame, Shield, Building, AlertTriangle } from "lucide-react";
+import { apiClient } from "@/lib/api";
+import { EmergencyContact } from "@/types";
+import { useToast } from "@/hooks/use-toast";
 
-const emergencyContacts = [
-  {
-    id: 1,
-    name: "Ambulance",
-    description: "For medical emergencies requiring immediate transport",
-    number: "911",
-    icon: Heart,
-    color: "red",
-    bgColor: "bg-red-100",
-    textColor: "text-red-600"
-  },
-  {
-    id: 2,
-    name: "Fire Brigade",
-    description: "For fire emergencies and rescue operations",
-    number: "999",
-    icon: Flame,
-    color: "orange",
-    bgColor: "bg-orange-100",
-    textColor: "text-orange-600"
-  },
-  {
-    id: 3,
-    name: "Police",
-    description: "For crime reporting and emergency police assistance",
-    number: "999",
-    icon: Shield,
-    color: "blue",
-    bgColor: "bg-blue-100",
-    textColor: "text-blue-600"
-  },
-  {
-    id: 4,
-    name: "Hospital",
-    description: "Nearest hospital for non-emergency medical care",
-    number: "0712-345678",
-    icon: Building,
-    color: "green",
-    bgColor: "bg-green-100",
-    textColor: "text-green-600"
-  },
-  {
-    id: 5,
-    name: "First Aid",
-    description: "For minor injuries and first aid assistance",
-    number: "0787-654321",
-    icon: Heart,
-    color: "purple",
-    bgColor: "bg-purple-100",
-    textColor: "text-purple-600"
-  },
-  {
-    id: 6,
-    name: "Security Company",
-    description: "Property security company for safety concerns",
-    number: "0723-111222",
-    icon: Shield,
-    color: "gray",
-    bgColor: "bg-gray-100",
-    textColor: "text-gray-600"
-  }
-];
+const iconMap = {
+  Heart,
+  Flame,
+  Shield,
+  Building,
+  AlertTriangle,
+};
 
 export function EmergencyServices() {
+  const { toast } = useToast();
+  const [contacts, setContacts] = useState<EmergencyContact[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchContacts = async () => {
+      setIsLoading(true);
+      try {
+        const response = await apiClient.getEmergencyContacts();
+        if (response.success) {
+          setContacts(response.data);
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to fetch emergency contacts",
+            variant: "destructive",
+          });
+        }
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to fetch emergency contacts";
+        toast({
+          title: "Error",
+          description: message,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchContacts();
+  }, [toast]);
+
   const handleCallNow = (number: string, name: string) => {
     // In a real app, this would initiate a phone call
     window.open(`tel:${number}`);
   };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="p-3 md:p-6 space-y-4 md:space-y-6">
@@ -83,31 +67,34 @@ export function EmergencyServices() {
 
       {/* Emergency Contacts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        {emergencyContacts.map((contact) => (
-          <Card key={contact.id} className="hover:shadow-lg transition-shadow">
-            <CardContent className="p-4 md:p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className={`p-3 rounded-full ${contact.bgColor}`}>
-                  <contact.icon className={`h-6 w-6 ${contact.textColor}`} />
+        {contacts.map((contact) => {
+          const Icon = iconMap[contact.icon as keyof typeof iconMap] || AlertTriangle;
+          return (
+            <Card key={contact.id} className="hover:shadow-lg transition-shadow">
+              <CardContent className="p-4 md:p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`p-3 rounded-full ${contact.bgColor}`}>
+                    <Icon className={`h-6 w-6 ${contact.textColor}`} />
+                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-[#ea384c] hover:bg-[#d32f41] text-white"
+                    onClick={() => handleCallNow(contact.number, contact.name)}
+                  >
+                    <Phone className="mr-1 h-4 w-4" />
+                    Call Now
+                  </Button>
                 </div>
-                <Button 
-                  size="sm" 
-                  className="bg-[#ea384c] hover:bg-[#d32f41] text-white"
-                  onClick={() => handleCallNow(contact.number, contact.name)}
-                >
-                  <Phone className="mr-1 h-4 w-4" />
-                  Call Now
-                </Button>
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="font-semibold text-lg">{contact.name}</h3>
-                <p className="text-sm text-gray-600">{contact.description}</p>
-                <p className="font-mono text-lg font-bold">{contact.number}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-lg">{contact.name}</h3>
+                  <p className="text-sm text-gray-600">{contact.description}</p>
+                  <p className="font-mono text-lg font-bold">{contact.number}</p>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Important Information */}

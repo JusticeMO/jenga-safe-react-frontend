@@ -1,5 +1,4 @@
 
-import React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +9,7 @@ interface PersonalInfoFormProps {
     fullName: string;
     phoneNumber: string;
   };
+  isLoading: boolean;
   onFormDataChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBack: () => void;
   onNext: () => void;
@@ -20,6 +20,7 @@ const PersonalInfoForm = ({
   onFormDataChange,
   onBack,
   onNext,
+  isLoading,
 }: PersonalInfoFormProps) => {
   const { toast } = useToast();
 
@@ -62,11 +63,11 @@ const PersonalInfoForm = ({
       </div>
 
       <div className="flex justify-between mt-6">
-        <Button type="button" variant="outline" onClick={onBack}>
+        <Button type="button" variant="outline" onClick={onBack} disabled={isLoading}>
           Back
         </Button>
-        <Button type="button" onClick={handleNext}>
-          Next
+        <Button type="button" onClick={handleNext} disabled={isLoading}>
+          {isLoading ? "Loading..." : "Next"}
         </Button>
       </div>
     </div>

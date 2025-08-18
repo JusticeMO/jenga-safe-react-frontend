@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,47 +16,50 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { apiClient } from "@/lib/api";
+import { MaintenanceRequest } from "@/types";
 
 export function MaintenanceRequestView() {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [requests, setRequests] = useState([
-    {
-      id: "req1",
-      title: "Bathroom Sink Leaking",
-      description: "Water is leaking under the bathroom sink cabinet",
-      priority: "Medium",
-      status: "In Progress",
-      createdAt: "2025-04-22T10:30:00",
-      updatedAt: "2025-04-22T14:20:00",
-    },
-    {
-      id: "req2",
-      title: "Living Room Window Won't Close",
-      description: "The window in the living room doesn't close properly and lets in a draft",
-      priority: "Low",
-      status: "Pending",
-      createdAt: "2025-04-19T08:15:00",
-      updatedAt: "2025-04-19T08:15:00",
-    },
-    {
-      id: "req3",
-      title: "Kitchen Light Fixture Broken",
-      description: "The main light in the kitchen is not working. I've tried changing the bulbs.",
-      priority: "Medium",
-      status: "Completed",
-      createdAt: "2025-04-15T13:45:00",
-      updatedAt: "2025-04-17T11:30:00",
-    }
-  ]);
+  const [requests, setRequests] = useState<MaintenanceRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   
   const [newRequest, setNewRequest] = useState({
     title: "",
     description: "",
     priority: "Medium"
   });
+
+  useEffect(() => {
+    const fetchRequests = async () => {
+      setIsLoading(true);
+      try {
+        const response = await apiClient.getMaintenanceRequests();
+        if (response.success) {
+          setRequests(response.data);
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to fetch maintenance requests",
+            variant: "destructive",
+          });
+        }
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to fetch maintenance requests";
+        toast({
+          title: "Error",
+          description: message,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchRequests();
+  }, [toast]);
   
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setNewRequest(prev => ({
       ...prev,
@@ -65,14 +67,14 @@ export function MaintenanceRequestView() {
     }));
   };
   
-  const handlePriorityChange = (value) => {
+  const handlePriorityChange = (value: "Low" | "Medium" | "High") => {
     setNewRequest(prev => ({
       ...prev,
       priority: value
     }));
   };
   
-  const handleSubmitRequest = () => {
+  const handleSubmitRequest = async () => {
     if (!newRequest.title || !newRequest.description) {
       toast({
         title: "Missing Information",
@@ -82,30 +84,38 @@ export function MaintenanceRequestView() {
       return;
     }
     
-    const now = new Date().toISOString();
-    const newMaintenanceRequest = {
-      id: `req${requests.length + 1}`,
-      ...newRequest,
-      status: "Pending",
-      createdAt: now,
-      updatedAt: now
-    };
-    
-    setRequests(prev => [newMaintenanceRequest, ...prev]);
-    setNewRequest({
-      title: "",
-      description: "",
-      priority: "Medium"
-    });
-    setIsDialogOpen(false);
-    
-    toast({
-      title: "Request Submitted",
-      description: "Your maintenance request has been submitted successfully",
-    });
+    try {
+      const response = await apiClient.createMaintenanceRequest(newRequest);
+      if (response.success) {
+        setRequests(prev => [response.data, ...prev]);
+        setNewRequest({
+          title: "",
+          description: "",
+          priority: "Medium"
+        });
+        setIsDialogOpen(false);
+        toast({
+          title: "Request Submitted",
+          description: "Your maintenance request has been submitted successfully",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to submit maintenance request",
+          variant: "destructive",
+        });
+      }
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to submit maintenance request";
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive",
+      });
+    }
   };
   
-  const getStatusIcon = (status) => {
+  const getStatusIcon = (status: MaintenanceRequest['status']) => {
     switch (status) {
       case "Pending":
         return <Clock className="h-4 w-4 text-yellow-500" />;
@@ -118,7 +128,7 @@ export function MaintenanceRequestView() {
     }
   };
   
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -126,6 +136,10 @@ export function MaintenanceRequestView() {
     });
   };
   
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">

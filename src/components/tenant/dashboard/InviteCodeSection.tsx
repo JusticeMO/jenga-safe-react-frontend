@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/AuthContext";
+import { PropertyInfo } from "@/types";
 
 interface InviteCodeSectionProps {
-  onSuccessfulRegistration: (propertyDetails: any) => void;
+  onSuccessfulRegistration: (propertyDetails: PropertyInfo) => void;
 }
 
 export function InviteCodeSection({ onSuccessfulRegistration }: InviteCodeSectionProps) {

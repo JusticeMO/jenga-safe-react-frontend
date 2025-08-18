@@ -297,7 +297,7 @@ export function PropertyUnitsView() {
               <Label htmlFor="status">Status</Label>
               <Select
                 defaultValue={newUnit.status}
-                onValueChange={(value) => handleStatusChange(value as any)}
+                onValueChange={(value) => handleStatusChange(value as "available" | "occupied" | "maintenance")}
               >
                 <SelectTrigger id="status">
                   <SelectValue placeholder="Select status" />

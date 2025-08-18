@@ -1,13 +1,47 @@
 
-import { mockProperties } from "@/lib/data";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Plus, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { apiClient } from "@/lib/api";
+import { Property } from "@/types";
+import { useToast } from "@/hooks/use-toast";
 
 export function PropertiesView() {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchProperties = async () => {
+      setIsLoading(true);
+      try {
+        const response = await apiClient.getProperties();
+        if (response.success) {
+          setProperties(response.data);
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to fetch properties",
+            variant: "destructive",
+          });
+        }
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to fetch properties";
+        toast({
+          title: "Error",
+          description: message,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProperties();
+  }, [toast]);
   
   const handleAddProperty = () => {
     navigate("/landlord/property/new");
@@ -21,6 +55,10 @@ export function PropertiesView() {
     navigate(`/landlord/property/${propertyId}/units`);
   };
 
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -32,7 +70,7 @@ export function PropertiesView() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {mockProperties.map((property) => {
+        {properties.map((property) => {
           const occupancyRate = (property.occupiedUnits / property.units) * 100;
           
           return (
