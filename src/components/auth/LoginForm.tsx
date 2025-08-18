@@ -53,7 +53,7 @@ export function LoginForm() {
     setIsLoading(true);
     
     try {
-      const success = await login(email, password, otp);
+      const success = await login(email, password, otp, role);
       
       if (success) {
         toast({

@@ -59,9 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (input: string, password: string, otp: string): Promise<boolean> => {
+  const login = async (input: string, password: string, otp: string, role: UserRole): Promise<boolean> => {
     try {
-      const response = await apiClient.login(input, password, otp);
+      const response = await apiClient.login(input, password, otp, role);
       
       if (response.success) {
         setUser(response.user);

@@ -3,7 +3,7 @@ import { User, UserRole } from '../types';
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string, otp: string) => Promise<boolean>;
+  login: (email: string, password: string, otp: string, role: UserRole) => Promise<boolean>;
   requestOTP: (email: string, password: string, role: UserRole) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;

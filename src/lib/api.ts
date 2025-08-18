@@ -53,10 +53,10 @@ class ApiClient {
     });
   }
 
-  async login(input: string, password: string, otp: string): Promise<ApiResponse<{ user: User; token: string }>> {
+  async login(input: string, password: string, otp: string, role: UserRole): Promise<ApiResponse<{ user: User; token: string }>> {
     const response = await this.request<{ user: User; token: string }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ input, password, otp }),
+      body: JSON.stringify({ input, password, otp, role }),
     });
 
     if (response.success && response.data?.token) {
