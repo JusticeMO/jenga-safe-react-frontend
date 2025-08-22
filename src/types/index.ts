@@ -1,7 +1,7 @@
 export type UserRole = 'tenant' | 'landlord';
 
 export interface User {
-  id: string;
+  id: number;
   name: string;
   email: string;
   role: UserRole;
