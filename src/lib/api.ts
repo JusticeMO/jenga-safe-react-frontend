@@ -1,7 +1,27 @@
 import { ApiResponse } from "@/types/api";
-import { User, Property, Payment, Message, MaintenanceRequest, Bill, UserRole, Complaint, GarbageServiceHistory, WaterUsageHistory, ChatMessage, Dashboard, DashboardStats, Unit, Report, EmergencyContact } from "@/types";
+import {
+  User,
+  Property,
+  Payment,
+  Message,
+  MaintenanceRequest,
+  Bill,
+  UserRole,
+  Complaint,
+  GarbageServiceHistory,
+  WaterUsageHistory,
+  ChatMessage,
+  Dashboard,
+  DashboardStats,
+  Unit,
+  Report,
+  EmergencyContact,
+} from "@/types";
 
-const API_BASE_URL = 'http://localhost:8000/api';
+// Allow overriding the API base URL via Vite env var. Falls back to localhost.
+// `import.meta.env` typings may vary, cast `import.meta` to any for broad compatibility.
+const API_BASE_URL =
+  (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:8000/api";
 
 // API client with token management
 class ApiClient {
@@ -42,6 +62,14 @@ class ApiClient {
         headers,
       });
 
+      // Auto-logout on expired / invalid token
+      if (response.status === 401) {
+        this.clearToken();
+        // Hard redirect to ensure full reset
+        window.location.href = "/login";
+        throw new Error("Unauthorized");
+      }
+
       const responseData = await response.json();
       console.log(`Response from ${endpoint}:`, responseData);
 
@@ -65,8 +93,10 @@ class ApiClient {
       body: JSON.stringify({ input, password, role }),
     });
 
-    if (response.success && response.data?.token) {
-      this.setToken(response.data.token);
+    // Token may be at top level (preferred) or nested in data for legacy responses
+    const token = (response as any).token ?? response.data?.token;
+    if (response.success && token) {
+      this.setToken(token);
     }
 
     return response;
@@ -86,8 +116,9 @@ class ApiClient {
       body: JSON.stringify(data),
     });
 
-    if (response.success && response.data?.token) {
-      this.setToken(response.data.token);
+    const token = (response as any).token ?? response.data?.token;
+    if (response.success && token) {
+      this.setToken(token);
     }
 
     return response;
@@ -115,7 +146,7 @@ class ApiClient {
     });
   }
 
-  async startConversation(data: { recipientId: string; subject: string; content: string }): Promise<ApiResponse<Message>> {
+  async startConversation(data: { recipientId: string | number; subject: string; content: string }): Promise<ApiResponse<Message>> {
     return this.request<Message>('/messages/start', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -136,7 +167,7 @@ class ApiClient {
     return this.request<Property[]>('/properties');
   }
 
-  async getProperty(id: string): Promise<ApiResponse<Property>> {
+  async getProperty(id: string | number): Promise<ApiResponse<Property>> {
     return this.request<Property>(`/properties/${id}`);
   }
 
@@ -147,14 +178,14 @@ class ApiClient {
     });
   }
 
-  async updateProperty(id: string, data: Partial<Property>): Promise<ApiResponse<Property>> {
+  async updateProperty(id: string | number, data: Partial<Property>): Promise<ApiResponse<Property>> {
     return this.request<Property>(`/properties/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
   }
 
-  async deleteProperty(id: string): Promise<ApiResponse<null>> {
+  async deleteProperty(id: string | number): Promise<ApiResponse<null>> {
     return this.request<null>(`/properties/${id}`, { method: 'DELETE' });
   }
 
@@ -174,7 +205,7 @@ class ApiClient {
     });
   }
 
-  async markPaymentCompleted(id: string, data: { receipt: string }): Promise<ApiResponse<Payment>> {
+  async markPaymentCompleted(id: string | number, data: { receipt: string }): Promise<ApiResponse<Payment>> {
     return this.request<Payment>(`/payments/${id}/mark-completed`, {
       method: 'POST',
       body: JSON.stringify(data),
@@ -186,7 +217,7 @@ class ApiClient {
     return this.request<Message[]>('/messages');
   }
 
-  async getMessagesForConversation(conversationId: string): Promise<ApiResponse<Message[]>> {
+  async getMessagesForConversation(conversationId: string | number): Promise<ApiResponse<Message[]>> {
     return this.request<Message[]>(`/messages/${conversationId}`);
   }
 
@@ -197,7 +228,7 @@ class ApiClient {
     });
   }
 
-  async markMessageRead(id: string): Promise<ApiResponse<Message>> {
+  async markMessageRead(id: string | number): Promise<ApiResponse<Message>> {
     return this.request<Message>(`/messages/${id}/mark-read`, { method: 'POST' });
   }
 
@@ -217,7 +248,7 @@ class ApiClient {
     });
   }
 
-  async updateMaintenanceRequest(id: string, data: Partial<MaintenanceRequest>): Promise<ApiResponse<MaintenanceRequest>> {
+  async updateMaintenanceRequest(id: string | number, data: Partial<MaintenanceRequest>): Promise<ApiResponse<MaintenanceRequest>> {
     return this.request<MaintenanceRequest>(`/maintenance-requests/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -229,7 +260,7 @@ class ApiClient {
     return this.request<Bill[]>('/bills');
   }
 
-  async markBillPaid(id: string, data: { transaction_id: string }): Promise<ApiResponse<Bill>> {
+  async markBillPaid(id: string | number, data: { transaction_id: string }): Promise<ApiResponse<Bill>> {
     return this.request<Bill>(`/bills/${id}/mark-paid`, {
       method: 'POST',
       body: JSON.stringify(data),
