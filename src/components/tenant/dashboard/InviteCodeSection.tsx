@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/useAuth";
 import { PropertyInfo } from "@/types";
 
 interface InviteCodeSectionProps {
@@ -80,7 +80,7 @@ export function InviteCodeSection({ onSuccessfulRegistration }: InviteCodeSectio
   };
 
   // If the tenant already has a property, don't show this section
-  if (user?.hasAssignedProperty) {
+  if (user?.has_assigned_property) {
     return null;
   }
 
