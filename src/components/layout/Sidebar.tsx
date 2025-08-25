@@ -63,8 +63,8 @@ export function Sidebar() {
       icon: Trash2
     },
     {
-      name: "Emergency Services",
-      path: "/tenant/emergency-services",
+      name: "Services",
+      path: "/tenant/services",
       icon: Phone
     },
     {

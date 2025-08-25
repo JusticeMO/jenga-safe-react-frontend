@@ -33,7 +33,7 @@ import PropertyExplorer from "./pages/tenant/PropertyExplorer";
 import TenantChat from "./pages/tenant/TenantChat";
 import WaterUsage from "./pages/tenant/WaterUsage";
 import GarbageServices from "./pages/tenant/GarbageServices";
-import EmergencyServices from "./pages/tenant/EmergencyServices";
+import Services from "./pages/tenant/Services";
 import FileComplaint from "./pages/tenant/FileComplaint";
 import WaterUsageMonitoring from "./pages/landlord/WaterUsageMonitoring";
 import GarbageManagement from "./pages/landlord/GarbageManagement";
@@ -56,7 +56,7 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/registration-pending" element={<RegistrationPending />} />
             <Route path="/invitation/:inviteCode" element={<TenantInvitation />} />
-            
+
             {/* Tenant Routes */}
             <Route path="/tenant/dashboard" element={<TenantDashboard />} />
             <Route path="/tenant/history" element={<PaymentHistory />} />
@@ -65,14 +65,14 @@ const App = () => (
             <Route path="/tenant/chat" element={<TenantChat />} />
             <Route path="/tenant/water-usage" element={<WaterUsage />} />
             <Route path="/tenant/garbage-services" element={<GarbageServices />} />
-            <Route path="/tenant/emergency-services" element={<EmergencyServices />} />
+            <Route path="/tenant/services" element={<Services />} />
             <Route path="/tenant/file-complaint" element={<FileComplaint />} />
             <Route path="/tenant/maintenance" element={<TenantMaintenance />} />
             <Route path="/tenant/documents" element={<Documents />} />
             <Route path="/tenant/settings" element={<TenantSettings />} />
             <Route path="/tenant/help" element={<TenantHelp />} />
             <Route path="/tenant/explore" element={<PropertyExplorer />} />
-            
+
             {/* Landlord Routes */}
             <Route path="/landlord/dashboard" element={<LandlordDashboard />} />
             <Route path="/landlord/properties" element={<Properties />} />
@@ -90,7 +90,7 @@ const App = () => (
             <Route path="/landlord/reports" element={<Reports />} />
             <Route path="/landlord/settings" element={<LandlordSettings />} />
             <Route path="/landlord/help" element={<LandlordHelp />} />
-            
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
