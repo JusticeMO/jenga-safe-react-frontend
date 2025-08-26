@@ -8,9 +8,8 @@ import { CredentialsForm } from "./login/CredentialsForm";
 export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"tenant" | "landlord">("tenant");
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -18,18 +17,19 @@ export function LoginForm() {
     setIsLoading(true);
     
     try {
-      const success = await login(email, password, role);
+      const success = await login(email, password);
       
       if (success) {
         toast({
           title: "Login Successful",
           description: "You have successfully logged in",
         });
-        
-        if (role === "tenant") {
-          navigate("/tenant/dashboard");
-        } else {
+
+        // Redirect based on the role now stored in context
+        if (user?.role === "landlord") {
           navigate("/landlord/dashboard");
+        } else {
+          navigate("/tenant/dashboard");
         }
       } else {
         toast({
@@ -58,8 +58,6 @@ export function LoginForm() {
         setEmail={setEmail}
         password={password}
         setPassword={setPassword}
-        role={role}
-        setRole={setRole}
         isLoading={isLoading}
         onSubmit={handleSubmit}
       />

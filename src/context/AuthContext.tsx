@@ -1,5 +1,5 @@
 import React, { createContext, useState, ReactNode, useEffect } from 'react';
-import { User, UserRole } from '../types';
+import { User } from '../types';
 import { useToast } from '@/hooks/use-toast';
 import apiClient from '../lib/api';
 import { AuthContext } from './AuthContext-context';
@@ -33,10 +33,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, []);
 
-  const login = async (input: string, password: string, role: UserRole): Promise<boolean> => {
+  const login = async (input: string, password: string): Promise<boolean> => {
     console.log("Logging in from AuthContext...");
     try {
-      const response = await apiClient.login(input, password, role);
+      const response = await apiClient.login(input, password);
       console.log("login response:", response);
       if (response.success) {
         setUser(response.user);

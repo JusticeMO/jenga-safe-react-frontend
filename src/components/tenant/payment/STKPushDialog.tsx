@@ -14,7 +14,6 @@ import { PaymentBreakdown } from "./PaymentBreakdown";
 import { PaymentInfoCard } from "./PaymentInfoCard";
 import { STKPushConfirmation } from "./STKPushConfirmation";
 import { PaymentReceipt } from "./PaymentReceipt";
-import { BillDisputeForm } from "./BillDisputeForm";
 import { apiClient } from "@/lib/api";
 
 interface STKPushDialogProps {
@@ -85,10 +84,6 @@ export function STKPushDialog({ isOpen, onOpenChange, rentAmount, unitName, phon
     });
   };
 
-  const handleSubmitAppeal = () => {
-    setActiveTab("payment");
-  };
-
   const handleCloseDialog = () => {
     onClose();
     setStkSent(false);
@@ -101,21 +96,24 @@ export function STKPushDialog({ isOpen, onOpenChange, rentAmount, unitName, phon
       <DialogContent className="w-[95vw] max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid grid-cols-3 mb-4 w-full">
+            <TabsList
+              className={`grid mb-4 w-full ${
+                showReceipt ? "grid-cols-2" : "grid-cols-1"
+              }`}
+            >
               <TabsTrigger value="payment" className="text-xs">Payment</TabsTrigger>
-              <TabsTrigger value="receipt" className="text-xs">Receipt</TabsTrigger>
-              <TabsTrigger value="appeal" className="text-xs">Dispute</TabsTrigger>
+              {showReceipt && (
+                <TabsTrigger value="receipt" className="text-xs">Receipt</TabsTrigger>
+              )}
             </TabsList>
 
             <DialogTitle className="text-base md:text-lg">
               {activeTab === "payment" && "M-Pesa Payment"}
               {activeTab === "receipt" && "Payment Receipt"}
-              {activeTab === "appeal" && "Bill Dispute Form"}
             </DialogTitle>
             <DialogDescription className="text-sm">
               {activeTab === "payment" && `Rent Payment for ${unitName}`}
               {activeTab === "receipt" && "View or download your payment receipt"}
-              {activeTab === "appeal" && "Submit a dispute if you believe your bill is incorrect"}
             </DialogDescription>
           </Tabs>
         </DialogHeader>
@@ -147,21 +145,15 @@ export function STKPushDialog({ isOpen, onOpenChange, rentAmount, unitName, phon
               )}
             </TabsContent>
 
-            <TabsContent value="receipt" className="mt-0">
+            {showReceipt && (
+              <TabsContent value="receipt" className="mt-0">
               <PaymentReceipt
                 phoneNumber={phoneNumber}
                 totalAmount={totalAmount}
                 paymentBreakdown={paymentBreakdown}
               />
-            </TabsContent>
-
-            <TabsContent value="appeal" className="space-y-4 mt-0">
-              <BillDisputeForm
-                paymentBreakdown={paymentBreakdown}
-                totalAmount={totalAmount}
-                onSubmit={handleSubmitAppeal}
-              />
-            </TabsContent>
+              </TabsContent>
+            )}
           </Tabs>
         </div>
         

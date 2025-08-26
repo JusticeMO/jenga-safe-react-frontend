@@ -1,6 +1,6 @@
 
 import { Message } from "@/types";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/useAuth";
 
 interface MessageDisplayProps {
   messages: Message[];

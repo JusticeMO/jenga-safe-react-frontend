@@ -1,5 +1,5 @@
 
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/useAuth";
 import { Link, useLocation } from "react-router-dom";
 import { 
   Home, 
@@ -43,7 +43,7 @@ export function Sidebar() {
       icon: History
     },
     {
-      name: "Messages",
+      name: "Notifications",
       path: "/tenant/messages",
       icon: MessageSquare
     },
@@ -63,7 +63,7 @@ export function Sidebar() {
       icon: Trash2
     },
     {
-      name: "Emergency Services",
+      name: "Services",
       path: "/tenant/emergency-services",
       icon: Phone
     },
@@ -106,7 +106,7 @@ export function Sidebar() {
       icon: Users
     },
     {
-      name: "Messages",
+      name: "Notifications",
       path: "/landlord/messages",
       icon: MessageSquare
     },

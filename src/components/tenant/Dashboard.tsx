@@ -7,7 +7,7 @@ import { RecentActivity } from "./dashboard/RecentActivity";
 import { PropertyStats } from "./dashboard/PropertyStats";
 import { TenantProfile } from "./dashboard/TenantProfile";
 import { InviteCodeSection } from "./dashboard/InviteCodeSection";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/useAuth";
 import { useEffect, useState } from "react";
 import { PropertyInfo } from "@/types";
 

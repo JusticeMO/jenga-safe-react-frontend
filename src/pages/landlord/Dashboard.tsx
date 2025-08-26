@@ -2,7 +2,7 @@
 import { LandlordDashboard } from "@/components/landlord/Dashboard";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context/useAuth";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 

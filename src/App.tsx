@@ -34,6 +34,7 @@ import TenantChat from "./pages/tenant/TenantChat";
 import WaterUsage from "./pages/tenant/WaterUsage";
 import GarbageServices from "./pages/tenant/GarbageServices";
 import EmergencyServices from "./pages/tenant/EmergencyServices";
+import EmergencyEssentials from "./pages/tenant/EmergencyEssentials";
 import FileComplaint from "./pages/tenant/FileComplaint";
 import WaterUsageMonitoring from "./pages/landlord/WaterUsageMonitoring";
 import GarbageManagement from "./pages/landlord/GarbageManagement";
@@ -66,6 +67,11 @@ const App = () => (
             <Route path="/tenant/water-usage" element={<WaterUsage />} />
             <Route path="/tenant/garbage-services" element={<GarbageServices />} />
             <Route path="/tenant/emergency-services" element={<EmergencyServices />} />
+            {/* Essentials landing page (nested under Emergency Services) */}
+            <Route
+              path="/tenant/emergency-services/essentials"
+              element={<EmergencyEssentials />}
+            />
             <Route path="/tenant/file-complaint" element={<FileComplaint />} />
             <Route path="/tenant/maintenance" element={<TenantMaintenance />} />
             <Route path="/tenant/documents" element={<Documents />} />

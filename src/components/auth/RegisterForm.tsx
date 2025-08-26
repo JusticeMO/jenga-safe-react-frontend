@@ -11,6 +11,7 @@ import RegisterFooter from "./register/RegisterFooter";
 
 const RegisterForm = () => {
   const { toast } = useToast();
+  // React Router navigation helper – allows us to redirect after successful registration
   const navigate = useNavigate();
   const [formStep, setFormStep] = useState(0);
   const [role, setRole] = useState<"tenant" | "landlord">("tenant");
@@ -74,9 +75,54 @@ const RegisterForm = () => {
       if (response.success) {
         toast({
           title: "Registration Successful",
-          description: "Your account has been created. Please log in.",
+          description: "Your account has been created and you have been logged in.",
         });
-        navigate("/login");
+        /* ------------------------------------------------------------------
+         * Post-registration routing
+         * ------------------------------------------------------------------
+         * • Landlord → /landlord/dashboard
+         * • Tenant:
+         *     • looking      → /tenant/explore
+         *     • invited       → /invitation/{CODE}  (if code present)
+         *     • moving_in     → flag property in localStorage then /tenant/dashboard
+         *     • fallback      → /tenant/dashboard
+         * ------------------------------------------------------------------ */
+        if (response.user?.role === "landlord") {
+          navigate("/landlord/dashboard");
+        } else {
+          // tenant
+          if (housingStatus === "looking") {
+            navigate("/tenant/explore");
+          } else if (housingStatus === "invited" && formData.inviteCode.trim()) {
+            const code = formData.inviteCode.trim().toUpperCase();
+            navigate(`/invitation/${code}`);
+          } else if (housingStatus === "moving_in") {
+            /* Pre-fill basic property context so the dashboard shows correct state */
+            const propertyNameLookup: Record<string, string> = {
+              prop1: "Sunshine Apartments",
+              prop2: "Riverside Villas",
+              prop3: "Mountain View Residences",
+            };
+
+            const propertyName = propertyNameLookup[formData.propertyId] || "My Property";
+            const details = {
+              propertyName,
+              propertyId: formData.propertyId,
+              unitNumber: formData.unitNumber,
+              rentAmount: 0,
+              depositAmount: 0,
+              nextDueDate: new Date().toISOString(),
+              firstPaymentDue: true,
+            };
+            localStorage.setItem("tenantHasProperty", "true");
+            localStorage.setItem("propertyDetails", JSON.stringify(details));
+
+            navigate("/tenant/dashboard");
+          } else {
+            // default fallback
+            navigate("/tenant/dashboard");
+          }
+        }
       } else {
         toast({
           title: "Registration Failed",
