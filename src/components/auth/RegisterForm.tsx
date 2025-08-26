@@ -11,6 +11,8 @@ import RegisterFooter from "./register/RegisterFooter";
 
 const RegisterForm = () => {
   const { toast } = useToast();
+  // React Router navigation helper – allows us to redirect after successful registration
+  const navigate = useNavigate();
   const [formStep, setFormStep] = useState(0);
   const [role, setRole] = useState<"tenant" | "landlord">("tenant");
   const [housingStatus, setHousingStatus] = useState<"looking" | "moving_in" | "invited">("looking");
