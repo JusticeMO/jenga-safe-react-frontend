@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Card, 
   CardContent, 
@@ -11,9 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { 
+import {
   Phone, 
   AlertTriangle, 
+  Trash,
   MapPin, 
   Clock,
   CheckCircle,
@@ -23,83 +23,58 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-
-// Mock emergency data
-const mockEmergencyContacts = [
-  {
-    id: "1",
-    service: "Fire Department",
-    phone: "999",
-    description: "Fire emergencies and rescue operations",
-    available24h: true,
-    response: "5-10 minutes"
-  },
-  {
-    id: "2",
-    service: "Police",
-    phone: "999",
-    description: "Security emergencies and criminal activities", 
-    available24h: true,
-    response: "10-15 minutes"
-  },
-  {
-    id: "3",
-    service: "Medical Emergency",
-    phone: "999",
-    description: "Medical emergencies and ambulance services",
-    available24h: true,
-    response: "8-12 minutes"
-  },
-  {
-    id: "4",
-    service: "Property Manager",
-    phone: "+254712345678",
-    description: "Building maintenance and property issues",
-    available24h: false,
-    response: "30-60 minutes"
-  }
-];
-
-const mockEmergencyReports = [
-  {
-    id: "1",
-    type: "Water Leak",
-    unitName: "Apartment 3B",
-    tenantName: "John Doe",
-    description: "Major water leak in the bathroom ceiling",
-    priority: "high",
-    status: "in-progress",
-    reportedAt: "2024-06-06 14:30",
-    respondedAt: "2024-06-06 14:45"
-  },
-  {
-    id: "2", 
-    type: "Power Outage",
-    unitName: "House 7",
-    tenantName: "Sarah Johnson",
-    description: "Complete power outage in the entire house",
-    priority: "medium",
-    status: "resolved",
-    reportedAt: "2024-06-05 20:15",
-    respondedAt: "2024-06-05 20:30"
-  }
-];
+import { apiClient } from "@/lib/api";
+import { EmergencyContact, Property } from "@/types";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 export function EmergencyManagement() {
   const { toast } = useToast();
-  const [emergencyContacts, setEmergencyContacts] = useState(mockEmergencyContacts);
-  const [emergencyReports, setEmergencyReports] = useState(mockEmergencyReports);
+  const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
+  // reports kept for now but hidden
+  const [emergencyReports] = useState<any[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [isAddingContact, setIsAddingContact] = useState(false);
   const [newContact, setNewContact] = useState({
-    service: "",
+    name: "",
     phone: "",
     description: "",
-    available24h: false,
-    response: ""
+    icon: "",
+    bg_color: "",
+    text_color: "",
+    sort_order: 0,
+    property_id: undefined as string | number | undefined,
   });
 
+  // Load contacts + landlord properties
+  useEffect(() => {
+    fetchContacts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const fetchContacts = async () => {
+    try {
+      const [contactsRes, propsRes] = await Promise.all([
+        apiClient.getEmergencyContacts(),
+        apiClient.getMyProperties(),
+      ]);
+      if (contactsRes.success) setEmergencyContacts(contactsRes.data);
+      if (propsRes.success) setProperties(propsRes.data);
+    } catch (e: any) {
+      toast({
+        title: "Error",
+        description: e.message ?? "Failed to fetch data",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleAddContact = () => {
-    if (!newContact.service || !newContact.phone) {
+    if (!newContact.name || !newContact.phone) {
       toast({
         title: "Missing Information",
         description: "Please fill in service name and phone number",
@@ -108,25 +83,41 @@ export function EmergencyManagement() {
       return;
     }
 
-    const contact = {
-      id: Date.now().toString(),
-      ...newContact
-    };
-
-    setEmergencyContacts(prev => [...prev, contact]);
-    setNewContact({
-      service: "",
-      phone: "",
-      description: "",
-      available24h: false,
-      response: ""
-    });
-    setIsAddingContact(false);
-
-    toast({
-      title: "Contact Added",
-      description: "Emergency contact has been added successfully"
-    });
+    apiClient
+      .createEmergencyContact({
+        name: newContact.name,
+        number: newContact.phone,
+        description: newContact.description,
+        icon: newContact.icon || undefined,
+        bg_color: newContact.bg_color || undefined,
+        text_color: newContact.text_color || undefined,
+        sort_order: newContact.sort_order || undefined,
+        property_id: newContact.property_id || undefined,
+      })
+      .then((res) => {
+        if (res.success) {
+          fetchContacts();
+          toast({ title: "Contact Added", description: "Essential contact created" });
+          setNewContact({
+            name: "",
+            phone: "",
+            description: "",
+            icon: "",
+            bg_color: "",
+            text_color: "",
+            sort_order: 0,
+            property_id: undefined,
+          });
+          setIsAddingContact(false);
+        }
+      })
+      .catch((e: any) =>
+        toast({
+          title: "Error",
+          description: e.message ?? "Failed to create contact",
+          variant: "destructive",
+        })
+      );
   };
 
   const handleUpdateReportStatus = (reportId: string, newStatus: string) => {
@@ -168,13 +159,13 @@ export function EmergencyManagement() {
         <h1 className="text-2xl font-bold">Emergency Services Management</h1>
         <Button onClick={() => setIsAddingContact(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Add Emergency Contact
+          Add Essential Contact
         </Button>
       </div>
 
       <Tabs defaultValue="contacts" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="contacts">Emergency Contacts</TabsTrigger>
+          <TabsTrigger value="contacts">Essential Contacts</TabsTrigger>
           <TabsTrigger value="reports">Emergency Reports</TabsTrigger>
           <TabsTrigger value="procedures">Emergency Procedures</TabsTrigger>
         </TabsList>
@@ -183,7 +174,7 @@ export function EmergencyManagement() {
           {isAddingContact && (
             <Card>
               <CardHeader>
-                <CardTitle>Add New Emergency Contact</CardTitle>
+                <CardTitle>Add New Essential Contact</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -191,8 +182,8 @@ export function EmergencyManagement() {
                     <Label>Service Name</Label>
                     <Input
                       placeholder="e.g. Fire Department"
-                      value={newContact.service}
-                      onChange={(e) => setNewContact(prev => ({...prev, service: e.target.value}))}
+                      value={newContact.name}
+                      onChange={(e) => setNewContact(prev => ({...prev, name: e.target.value}))}
                     />
                   </div>
                   <div className="space-y-2">
@@ -204,23 +195,68 @@ export function EmergencyManagement() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Response Time</Label>
-                    <Input
-                      placeholder="e.g. 5-10 minutes"
-                      value={newContact.response}
-                      onChange={(e) => setNewContact(prev => ({...prev, response: e.target.value}))}
-                    />
+                  <Label>Sort Order</Label>
+                  <Input
+                    type="number"
+                    value={newContact.sort_order}
+                    onChange={(e) =>
+                      setNewContact((p) => ({ ...p, sort_order: Number(e.target.value) }))
+                    }
+                  />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={newContact.available24h}
-                        onChange={(e) => setNewContact(prev => ({...prev, available24h: e.target.checked}))}
-                      />
-                      <span>Available 24/7</span>
-                    </Label>
-                  </div>
+                <div className="space-y-2">
+                  <Label>Icon</Label>
+                  <Select
+                    value={newContact.icon}
+                    onValueChange={(val) => setNewContact((p) => ({ ...p, icon: val }))}
+                  >
+                    <SelectTrigger />
+                    <SelectContent>
+                      {["Heart", "Flame", "Shield", "Building", "AlertTriangle"].map((ic) => (
+                        <SelectItem key={ic} value={ic}>
+                          {ic}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Background Color</Label>
+                  <Input
+                    placeholder="e.g. bg-red-100"
+                    value={newContact.bg_color}
+                    onChange={(e) => setNewContact((p) => ({ ...p, bg_color: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Text Color</Label>
+                  <Input
+                    placeholder="e.g. text-red-600"
+                    value={newContact.text_color}
+                    onChange={(e) => setNewContact((p) => ({ ...p, text_color: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Property</Label>
+                  <Select
+                    value={newContact.property_id ? String(newContact.property_id) : ""}
+                    onValueChange={(val) =>
+                      setNewContact((p) => ({ ...p, property_id: val || undefined }))
+                    }
+                  >
+                    <SelectTrigger />
+                    <SelectContent>
+                      {/* default option */}
+                      <SelectItem value="">All Properties</SelectItem>
+                      {/* landlord's properties */}
+                      {properties.map((prop) => (
+                        <SelectItem key={prop.id} value={String(prop.id)}>
+                          {prop.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Description</Label>
@@ -243,23 +279,48 @@ export function EmergencyManagement() {
               <Card key={contact.id} className="relative">
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{contact.service}</CardTitle>
-                    <Button variant="ghost" size="sm">
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                    <CardTitle className="text-lg">{contact.name}</CardTitle>
+                    <div className="flex space-x-1">
+                      <Button variant="ghost" size="icon" onClick={() => {/* edit TBD */}}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() =>
+                          apiClient
+                            .deleteEmergencyContact(contact.id)
+                            .then(fetchContacts)
+                            .catch((e: any) =>
+                              toast({
+                                title: "Error",
+                                description: e.message ?? "Failed to delete",
+                                variant: "destructive",
+                              })
+                            )
+                        }
+                      >
+                        <Trash className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center space-x-2">
                     <Phone className="h-4 w-4 text-green-600" />
-                    <span className="font-mono font-medium">{contact.phone}</span>
+                    <span className="font-mono font-medium">{contact.number}</span>
                   </div>
                   <p className="text-sm text-muted-foreground">{contact.description}</p>
-                  <div className="flex items-center justify-between">
-                    <Badge variant={contact.available24h ? "default" : "secondary"}>
-                      {contact.available24h ? "24/7 Available" : "Business Hours"}
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="secondary">
+                      {contact.property_id
+                        ? properties.find((p) => p.id === contact.property_id)?.name ??
+                          `Property #${contact.property_id}`
+                        : "All Properties"}
                     </Badge>
-                    <span className="text-sm text-muted-foreground">~{contact.response}</span>
+                    {contact.sort_order !== undefined && (
+                      <Badge variant="outline">#{contact.sort_order}</Badge>
+                    )}
                   </div>
                 </CardContent>
               </Card>

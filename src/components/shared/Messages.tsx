@@ -194,11 +194,13 @@ export function MessagesView({ userRole }: MessagesViewProps) {
   return (
     <div className="p-6 h-full">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Messages</h1>
-        <Button onClick={() => setIsNewMessageDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Message
-        </Button>
+        <h1 className="text-2xl font-bold">Notifications</h1>
+        {userRole === "landlord" && (
+          <Button onClick={() => setIsNewMessageDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Message
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-[calc(100%-4rem)]">
@@ -231,7 +233,9 @@ export function MessagesView({ userRole }: MessagesViewProps) {
               <CardContent className="flex-1 overflow-y-auto py-4">
                 <MessageDisplay messages={messages[selectedConversation.id]} />
               </CardContent>
-              <MessageInput onSendMessage={handleSendMessage} />
+              {userRole === "landlord" && (
+                <MessageInput onSendMessage={handleSendMessage} />
+              )}
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center text-gray-500">
@@ -241,13 +245,15 @@ export function MessagesView({ userRole }: MessagesViewProps) {
         </Card>
       </div>
 
-      <NewConversationDialog
-        isOpen={isNewMessageDialogOpen}
-        onOpenChange={setIsNewMessageDialogOpen}
-        contacts={contacts}
-        userRole={userRole}
-        onStartConversation={handleStartNewConversation}
-      />
+      {userRole === "landlord" && (
+        <NewConversationDialog
+          isOpen={isNewMessageDialogOpen}
+          onOpenChange={setIsNewMessageDialogOpen}
+          contacts={contacts}
+          userRole={userRole}
+          onStartConversation={handleStartNewConversation}
+        />
+      )}
     </div>
   );
 }

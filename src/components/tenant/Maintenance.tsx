@@ -87,7 +87,7 @@ export function MaintenanceRequestView() {
     try {
       const response = await apiClient.createMaintenanceRequest(newRequest);
       if (response.success) {
-        setRequests(prev => [response.data, ...prev]);
+        setRequests(prev => [{ ...response.data, status: (response.data as any).status ?? 'Queued' } as any, ...prev]);
         setNewRequest({
           title: "",
           description: "",
@@ -115,16 +115,26 @@ export function MaintenanceRequestView() {
     }
   };
   
-  const getStatusIcon = (status: MaintenanceRequest['status']) => {
+  /**
+   * Canonicalise various backend / legacy status strings to the new
+   * vocabulary expected by the UI.
+   */
+  const normaliseStatus = (status: string): "Queued" | "In Progress" | "Resolved" => {
+    const s = status.toLowerCase();
+    if (["queued", "pending"].includes(s)) return "Queued";
+    if (["in progress", "in-progress"].includes(s)) return "In Progress";
+    return "Resolved"; // covers completed / resolved / done
+  };
+
+  const getStatusIcon = (rawStatus: MaintenanceRequest['status']) => {
+    const status = normaliseStatus(String(rawStatus));
     switch (status) {
-      case "Pending":
+      case "Queued":
         return <Clock className="h-4 w-4 text-yellow-500" />;
       case "In Progress":
         return <AlertTriangle className="h-4 w-4 text-blue-500" />;
-      case "Completed":
+      case "Resolved":
         return <CheckCircle className="h-4 w-4 text-green-500" />;
-      default:
-        return null;
     }
   };
   
@@ -218,14 +228,14 @@ export function MaintenanceRequestView() {
               <div className="flex justify-between items-center">
                 <CardTitle className="text-base">{request.title}</CardTitle>
                 <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                  request.status === 'Completed' 
-                    ? 'bg-green-100 text-green-800' 
-                    : request.status === 'In Progress'
+                  normaliseStatus(request.status) === 'Resolved'
+                    ? 'bg-green-100 text-green-800'
+                    : normaliseStatus(request.status) === 'In Progress'
                       ? 'bg-blue-100 text-blue-800'
                       : 'bg-yellow-100 text-yellow-800'
                 }`}>
                   {getStatusIcon(request.status)}
-                  <span className="ml-1">{request.status}</span>
+                  <span className="ml-1">{normaliseStatus(request.status)}</span>
                 </div>
               </div>
             </CardHeader>

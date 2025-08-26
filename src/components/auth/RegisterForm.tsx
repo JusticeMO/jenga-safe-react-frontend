@@ -11,7 +11,6 @@ import RegisterFooter from "./register/RegisterFooter";
 
 const RegisterForm = () => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [formStep, setFormStep] = useState(0);
   const [role, setRole] = useState<"tenant" | "landlord">("tenant");
   const [housingStatus, setHousingStatus] = useState<"looking" | "moving_in" | "invited">("looking");
@@ -74,9 +73,13 @@ const RegisterForm = () => {
       if (response.success) {
         toast({
           title: "Registration Successful",
-          description: "Your account has been created. Please log in.",
+          description: "Your account has been created and you have been logged in.",
         });
-        navigate("/login");
+        // Automatically redirect to the appropriate dashboard
+        const redirectRole = response.user?.role === "landlord" ? "landlord" : "tenant";
+        window.location.href = redirectRole === "landlord"
+          ? "/landlord/dashboard"
+          : "/tenant/dashboard";
       } else {
         toast({
           title: "Registration Failed",

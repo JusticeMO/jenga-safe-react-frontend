@@ -85,12 +85,90 @@ class ApiClient {
     }
   }
 
+  /**
+   * Transform a Property object coming from UI into the backend payload shape.
+   * Only includes keys that the backend expects and omits undefined values.
+   */
+  private formatPropertyPayload(data: Partial<Property>): Record<string, any> {
+    const payload: Record<string, any> = {};
+
+    if (data.name) {
+      payload.name = data.name;
+    }
+
+    if (data.address) {
+      payload.address = data.address;
+    }
+
+    if (data.description) {
+      payload.description = data.description;
+    }
+
+    // total_units
+    if ((data as any).total_units !== undefined) {
+      payload.total_units = (data as any).total_units;
+    } else if (data.units !== undefined) {
+      payload.total_units = Number(data.units);
+    }
+
+    // rent_amount
+    if ((data as any).rent_amount !== undefined) {
+      payload.rent_amount = (data as any).rent_amount;
+    } else if ((data as any).rent !== undefined) {
+      payload.rent_amount = Number((data as any).rent);
+    } else if (data.price !== undefined) {
+      payload.rent_amount = Number(data.price);
+    }
+
+    // amenities
+    if ((data as any).amenities !== undefined) {
+      const amenitiesVal = (data as any).amenities;
+      if (Array.isArray(amenitiesVal)) {
+        payload.amenities = amenitiesVal;
+      } else if (typeof amenitiesVal === 'string') {
+        payload.amenities = amenitiesVal
+          .split(',')
+          .map((a) => a.trim())
+          .filter(Boolean);
+      }
+    }
+
+    // images
+    if ((data as any).images !== undefined && Array.isArray((data as any).images)) {
+      payload.images = (data as any).images;
+    }
+
+    // latitude / longitude
+    if ((data as any).latitude !== undefined) {
+      const lat = Number((data as any).latitude);
+      if (!Number.isNaN(lat)) {
+        payload.latitude = lat;
+      }
+    }
+    if ((data as any).longitude !== undefined) {
+      const lng = Number((data as any).longitude);
+      if (!Number.isNaN(lng)) {
+        payload.longitude = lng;
+      }
+    }
+
+    // tax_rate
+    if ((data as any).tax_rate !== undefined) {
+      const tax = Number((data as any).tax_rate);
+      if (!Number.isNaN(tax)) {
+        payload.tax_rate = tax;
+      }
+    }
+
+    return payload;
+  }
+
   // Auth endpoints
-  async login(input: string, password: string, role: UserRole): Promise<ApiResponse<{ user: User; token: string }>> {
-    console.log("Logging in with:", { input, role });
+  async login(input: string, password: string): Promise<ApiResponse<{ user: User; token: string }>> {
+    console.log("Logging in with:", { input });
     const response = await this.request<{ user: User; token: string }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ input, password, role }),
+      body: JSON.stringify({ input, password }),
     });
 
     // Token may be at top level (preferred) or nested in data for legacy responses
@@ -172,16 +250,18 @@ class ApiClient {
   }
 
   async createProperty(data: Partial<Property>): Promise<ApiResponse<Property>> {
+    const payload = this.formatPropertyPayload(data);
     return this.request<Property>('/properties', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
   }
 
   async updateProperty(id: string | number, data: Partial<Property>): Promise<ApiResponse<Property>> {
+    const payload = this.formatPropertyPayload(data);
     return this.request<Property>(`/properties/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify(payload),
     });
   }
 
@@ -313,8 +393,23 @@ class ApiClient {
     return this.request<Document[]>('/documents');
   }
 
-  async getEmergencyContacts(): Promise<ApiResponse<EmergencyContact[]>> {
-    return this.request<EmergencyContact[]>('/emergency-contacts');
+  /**
+   * Fetch emergency contacts.
+   * If a propertyId is supplied the backend will return contacts that are
+   *   - global (property_id == null) OR
+   *   - scoped to that specific property
+   *
+   * Leaving params undefined preserves backward-compatibility with existing
+   * callers that expect all contacts relevant to the current user.
+   */
+  async getEmergencyContacts(
+    params?: { propertyId?: string | number }
+  ): Promise<ApiResponse<EmergencyContact[]>> {
+    let endpoint = '/emergency-contacts';
+    if (params?.propertyId !== undefined && params.propertyId !== null) {
+      endpoint += `?property_id=${encodeURIComponent(params.propertyId)}`;
+    }
+    return this.request<EmergencyContact[]>(endpoint);
   }
 
   async initiateSTKPush(data: { amount: number; phoneNumber: string }): Promise<ApiResponse<null>> {

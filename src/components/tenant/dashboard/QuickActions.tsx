@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { 
   CreditCard, 
@@ -19,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -31,12 +31,13 @@ export function QuickActions({ onActionClick }: QuickActionsProps) {
   const [isMoveOutDialogOpen, setIsMoveOutDialogOpen] = useState(false);
   const [moveOutReason, setMoveOutReason] = useState("");
   const [moveOutDate, setMoveOutDate] = useState("");
+  const [moveOutPassword, setMoveOutPassword] = useState("");
   
   const handleSubmitMoveOutNotice = () => {
-    if (!moveOutReason || !moveOutDate) {
+    if (!moveOutReason || !moveOutDate || !moveOutPassword) {
       toast({
         title: "Missing Information",
-        description: "Please provide both a reason and move-out date",
+        description: "Please provide a reason, move-out date, and confirm with your password",
         variant: "destructive"
       });
       return;
@@ -44,12 +45,13 @@ export function QuickActions({ onActionClick }: QuickActionsProps) {
     
     toast({
       title: "Notice Submitted",
-      description: "Your move-out notice has been submitted successfully. The property manager will review it."
+      description: "Your move-out notice has been submitted. You will receive a call to confirm."
     });
     
     setIsMoveOutDialogOpen(false);
     setMoveOutReason("");
     setMoveOutDate("");
+    setMoveOutPassword("");
   };
   
   return (
@@ -77,10 +79,10 @@ export function QuickActions({ onActionClick }: QuickActionsProps) {
         <Button 
           variant="outline" 
           className="h-24 text-lg justify-start px-6 py-10 shadow-sm"
-          onClick={() => onActionClick("new-message")}
+          onClick={() => onActionClick("notifications")}
         >
           <MessageSquare className="w-6 h-6 mr-2" />
-          New Message
+          View Notifications
         </Button>
         <Button 
           variant="outline" 
@@ -138,6 +140,18 @@ export function QuickActions({ onActionClick }: QuickActionsProps) {
                   onChange={(e) => setMoveOutReason(e.target.value)}
                   placeholder="Please provide a reason for moving out..."
                   rows={4}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">Confirm with Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={moveOutPassword}
+                  onChange={(e) => setMoveOutPassword(e.target.value)}
+                  placeholder="Enter your password to confirm"
+                  required
                 />
               </div>
               

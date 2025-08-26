@@ -14,7 +14,7 @@ export function PaymentInfoCard({ phoneNumber, totalAmount, unitName }: PaymentI
       <div className="bg-[#ea384c]/5 p-3 rounded-md border border-[#ea384c]/20">
         <div className="flex items-center mb-2">
           <Phone className="h-4 w-4 mr-2 text-[#ea384c]" />
-          <Label className="text-sm font-medium">M-Pesa Phone Number</Label>
+          <Label className="text-sm font-medium">Pay To (Landlord&apos;s Destination)</Label>
         </div>
         <p className="text-sm font-mono bg-white px-3 py-2 rounded border">
           {phoneNumber}
@@ -28,10 +28,15 @@ export function PaymentInfoCard({ phoneNumber, totalAmount, unitName }: PaymentI
         </p>
         <div className="mt-2 space-y-1 text-sm">
           <p><span className="font-medium">Amount:</span> KES {totalAmount.toLocaleString()}</p>
-          <p><span className="font-medium">Business:</span> Jenga Safe Ltd</p>
+          <p><span className="font-medium">Destination Owner:</span> Landlord</p>
           <p><span className="font-medium">Account:</span> {unitName}</p>
         </div>
       </div>
+
+      <p className="text-xs text-muted-foreground mt-2">
+        Payments are made directly to your landlord&apos;s provided number, paybill/till,
+        or bank details. Jenga&nbsp;Safe does not receive these funds.
+      </p>
     </>
   );
 }

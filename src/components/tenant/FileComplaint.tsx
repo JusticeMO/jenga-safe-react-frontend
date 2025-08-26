@@ -58,7 +58,7 @@ export function FileComplaint() {
       if (response.success) {
         toast({
           title: "Complaint Submitted",
-          description: "Your complaint has been received and will be reviewed within 48 hours",
+          description: "Your complaint has been delivered to management and will be reviewed within 48 hours",
         });
         setRecentComplaints(prev => [response.data, ...prev]);
         // Reset form

@@ -98,14 +98,27 @@ export interface Document {
 }
 
 export interface EmergencyContact {
-  id: number;
+  /* ------------------------------------------------------------------
+   * Core fields persisted in the backend
+   * ------------------------------------------------------------------ */
+  id: number | string;
+  landlord_id?: number | string;
+  property_id?: number | string | null;
   name: string;
-  description: string;
-  number: string;
-  icon: string;
-  color: string;
-  bgColor: string;
-  textColor: string;
+  number: string;              // phone number to dial
+  description?: string;
+  icon?: string;               // lucide icon name
+  bg_color?: string;           // tailwind bg class (snake_case from API)
+  text_color?: string;         // tailwind text class (snake_case from API)
+  sort_order?: number;
+
+  /* ------------------------------------------------------------------
+   * Legacy / camelCase aliases used in older UI components – keep so
+   * TypeScript doesn't break while the codebase gradually migrates.
+   * ------------------------------------------------------------------ */
+  color?: string;              // generic colour string
+  bgColor?: string;            // camelCase mirror of bg_color
+  textColor?: string;          // camelCase mirror of text_color
 }
 
 export interface Complaint {

@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,28 +6,72 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate, useParams } from "react-router-dom";
-import { MapPin, DollarSign, Users, Home, Save } from "lucide-react";
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
-import { useEffect, useRef } from "react";
+import { MapPin, DollarSign, Users, Home, Save, Percent } from "lucide-react";
 import { apiClient } from "@/lib/api";
-import { Property } from "@/types";
 
-// This would typically come from an environment variable
-// For a production app, you'd want to use your own Mapbox token
-const MAPBOX_TOKEN = 'pk.eyJ1IjoibG92YWJsZWFpIiwiYSI6ImNsdDhleGJyYzFwcngya3BpZW45bHR3Z3MifQ.a0iti-T4nX9u9w5dFAmLxg';
-mapboxgl.accessToken = MAPBOX_TOKEN;
+// Google Maps API key – configure in .env as VITE_GOOGLE_MAPS_API_KEY
+const GOOGLE_MAPS_API_KEY =
+  (import.meta as any).env?.VITE_GOOGLE_MAPS_API_KEY ?? "";
+
+/**
+ * Dynamically load Google Maps JS (Places library).  Returns a promise that
+ * resolves when the script is ready or immediately if already loaded.
+ */
+function loadGoogleMapsScript(apiKey: string): Promise<void> {
+  if ((window as any).google?.maps?.places) {
+    return Promise.resolve();
+  }
+  return new Promise((resolve, reject) => {
+    const existing = document.getElementById("gmaps-script") as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener("load", () => resolve());
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "gmaps-script";
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load Google Maps"));
+    document.body.appendChild(script);
+  });
+}
+
+// Define form state interface
+interface PropertyFormState {
+  name: string;
+  address: string;
+  description: string;
+  units: number | string;
+  rent: number | string;
+  tax_rate: number | string;
+  latitude: string;
+  longitude: string;
+  amenities: string;
+}
 
 export function PropertyDetailsView() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const mapContainer = useRef(null);
-  const map = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
+  // ref for Google Maps Autocomplete input
+  const locationInputRef = useRef<HTMLInputElement | null>(null);
   
-  const [property, setProperty] = useState<Partial<Property>>({});
+  // Initialize form with empty values
+  const [form, setForm] = useState<PropertyFormState>({
+    name: '',
+    address: '',
+    description: '',
+    units: '',
+    rent: '',
+    tax_rate: '',
+    latitude: '',
+    longitude: '',
+    amenities: '',
+  });
 
+  // Load existing property data when editing
   useEffect(() => {
     if (id && id !== "new") {
       const fetchProperty = async () => {
@@ -36,7 +79,22 @@ export function PropertyDetailsView() {
         try {
           const response = await apiClient.getProperty(id);
           if (response.success) {
-            setProperty(response.data);
+            const property = response.data;
+            
+            // Map backend fields to form state
+            setForm({
+              name: property.name || '',
+              address: property.address || '',
+              description: property.description || '',
+              units: property.total_units || '',
+              rent: property.rent_amount || '',
+              tax_rate: property.tax_rate || '',
+              latitude: property.latitude || '',
+              longitude: property.longitude || '',
+              amenities: Array.isArray(property.amenities) 
+                ? property.amenities.join(', ') 
+                : property.amenities || '',
+            });
           } else {
             toast({
               title: "Error",
@@ -59,95 +117,58 @@ export function PropertyDetailsView() {
     }
   }, [id, toast]);
 
-  // Initialize map
+  // ---- Google Places Autocomplete ----
   useEffect(() => {
-    if (map.current) return; // Initialize map only once
-    if (mapContainer.current) {
-      map.current = new mapboxgl.Map({
-        container: mapContainer.current,
-        style: 'mapbox://styles/mapbox/streets-v12',
-        center: [property.location.longitude, property.location.latitude],
-        zoom: 12
+    if (!GOOGLE_MAPS_API_KEY) return; // skip if no API key
+
+    const initAutocomplete = () => {
+      if (!locationInputRef.current || !(window as any).google?.maps?.places) return;
+      const autocomplete = new (window as any).google.maps.places.Autocomplete(
+        locationInputRef.current,
+        { fields: ["formatted_address", "geometry", "name"], types: ["geocode"] }
+      );
+      autocomplete.addListener("place_changed", () => {
+        const place = autocomplete.getPlace();
+        const address =
+          place.formatted_address || place.name || locationInputRef.current!.value;
+        const lat = place.geometry?.location?.lat();
+        const lng = place.geometry?.location?.lng();
+        setForm((prev) => ({
+          ...prev,
+          address,
+          latitude: lat !== undefined ? String(lat) : prev.latitude,
+          longitude: lng !== undefined ? String(lng) : prev.longitude,
+        }));
       });
+    };
 
-      // Add marker
-      new mapboxgl.Marker()
-        .setLngLat([property.location.longitude, property.location.latitude])
-        .addTo(map.current);
+    loadGoogleMapsScript(GOOGLE_MAPS_API_KEY)
+      .then(initAutocomplete)
+      .catch((err) => console.error("Google Maps load error:", err));
+  }, []);
 
-      // Add navigation controls
-      map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    }
-  }, [property.location.longitude, property.location.latitude]);
-
-  // Update marker when location changes
-  useEffect(() => {
-    if (!map.current) return;
-    map.current.setCenter([property.location.longitude, property.location.latitude]);
-    
-    // Remove existing markers
-    const markers = document.getElementsByClassName('mapboxgl-marker');
-    while(markers[0]) {
-      markers[0].parentNode.removeChild(markers[0]);
-    }
-    
-    // Add new marker
-    new mapboxgl.Marker()
-      .setLngLat([property.location.longitude, property.location.latitude])
-      .addTo(map.current);
-  }, [property.location]);
-
+  // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setProperty(prev => ({
+    setForm(prev => ({
       ...prev,
       [name]: value
     }));
   };
 
-  const handleRentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rentValue = parseInt(e.target.value) || 0;
-    setProperty(prev => ({
-      ...prev,
-      rent: rentValue
-    }));
-  };
-
-  const handleUnitsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const units = parseInt(e.target.value) || 0;
-    setProperty(prev => ({
-      ...prev,
-      units
-    }));
-  };
-
-  const handleLocationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    const numValue = parseFloat(value);
-    
-    if (!isNaN(numValue)) {
-      setProperty(prev => ({
-        ...prev,
-        location: {
-          ...prev.location,
-          [name === 'latitude' ? 'latitude' : 'longitude']: numValue
-        }
-      }));
-    }
-  };
-
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
       if (id && id !== "new") {
-        await apiClient.updateProperty(id, property);
+        await apiClient.updateProperty(id, form as any);
       } else {
-        await apiClient.createProperty(property);
+        await apiClient.createProperty(form as any);
       }
       toast({
         title: "Success",
-        description: `Property ${id ? "updated" : "created"} successfully`,
+        description: `Property ${id && id !== "new" ? "updated" : "created"} successfully`,
       });
       navigate("/landlord/properties");
     } catch (error: unknown) {
@@ -166,7 +187,7 @@ export function PropertyDetailsView() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">
-          {id ? `Edit Property: ${property.name}` : "Add New Property"}
+          {id && id !== "new" ? `Edit Property: ${form.name}` : "Add New Property"}
         </h1>
         <Button onClick={() => navigate("/landlord/properties")}>
           Back to Properties
@@ -185,7 +206,7 @@ export function PropertyDetailsView() {
                 <Input
                   id="name"
                   name="name"
-                  value={property.name}
+                  value={form.name}
                   onChange={handleInputChange}
                   required
                 />
@@ -197,7 +218,7 @@ export function PropertyDetailsView() {
                   <Input
                     id="address"
                     name="address"
-                    value={property.address}
+                    value={form.address}
                     onChange={handleInputChange}
                     required
                     className="pl-9"
@@ -213,8 +234,8 @@ export function PropertyDetailsView() {
                     id="rent"
                     name="rent"
                     type="number"
-                    value={property.rent}
-                    onChange={handleRentChange}
+                    value={form.rent}
+                    onChange={handleInputChange}
                     required
                     className="pl-9"
                   />
@@ -229,12 +250,30 @@ export function PropertyDetailsView() {
                     id="units"
                     name="units"
                     type="number"
-                    value={property.units}
-                    onChange={handleUnitsChange}
+                    value={form.units}
+                    onChange={handleInputChange}
                     required
                     className="pl-9"
                   />
                   <Home className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="tax_rate">Tax Rate (%)</Label>
+                <div className="relative">
+                  <Input
+                    id="tax_rate"
+                    name="tax_rate"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    value={form.tax_rate}
+                    onChange={handleInputChange}
+                    className="pl-9"
+                  />
+                  <Percent className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
                 </div>
               </div>
             </div>
@@ -244,7 +283,7 @@ export function PropertyDetailsView() {
               <Textarea
                 id="description"
                 name="description"
-                value={property.description}
+                value={form.description}
                 onChange={handleInputChange}
                 rows={3}
               />
@@ -254,7 +293,7 @@ export function PropertyDetailsView() {
         
         <Card>
           <CardHeader>
-            <CardTitle>Property Amenities & Rules</CardTitle>
+            <CardTitle>Property Amenities</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -262,22 +301,10 @@ export function PropertyDetailsView() {
               <Textarea
                 id="amenities"
                 name="amenities"
-                value={property.amenities}
+                value={form.amenities}
                 onChange={handleInputChange}
                 rows={2}
                 placeholder="Swimming pool, Gym, Security, Parking"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="rules">Property Rules</Label>
-              <Textarea
-                id="rules"
-                name="rules"
-                value={property.rules}
-                onChange={handleInputChange}
-                rows={2}
-                placeholder="No pets, No smoking"
               />
             </div>
           </CardContent>
@@ -294,11 +321,10 @@ export function PropertyDetailsView() {
                 <Input
                   id="latitude"
                   name="latitude"
-                  type="number"
-                  step="0.000001"
-                  value={property.location.latitude}
-                  onChange={handleLocationChange}
-                  required
+                  type="text"
+                  value={form.latitude}
+                  onChange={handleInputChange}
+                  placeholder="-1.2921"
                 />
               </div>
               
@@ -307,16 +333,13 @@ export function PropertyDetailsView() {
                 <Input
                   id="longitude"
                   name="longitude"
-                  type="number"
-                  step="0.000001"
-                  value={property.location.longitude}
-                  onChange={handleLocationChange}
-                  required
+                  type="text"
+                  value={form.longitude}
+                  onChange={handleInputChange}
+                  placeholder="36.8219"
                 />
               </div>
             </div>
-            
-            <div className="h-[300px] bg-gray-100 rounded-md overflow-hidden" ref={mapContainer} />
             
             <div className="text-xs text-gray-500">
               <p>Tip: You can search for coordinates using Google Maps or another mapping service.</p>
@@ -327,7 +350,9 @@ export function PropertyDetailsView() {
         <div className="flex justify-end">
           <Button type="submit" className="px-8" disabled={isLoading}>
             <Save className="mr-2 h-4 w-4" />
-            {isLoading ? (id ? "Updating..." : "Creating...") : (id ? "Update Property" : "Create Property")}
+            {isLoading 
+              ? (id && id !== "new" ? "Updating..." : "Creating...") 
+              : (id && id !== "new" ? "Update Property" : "Create Property")}
           </Button>
         </div>
       </form>

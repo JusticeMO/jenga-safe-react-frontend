@@ -45,6 +45,9 @@ export function DocumentsView() {
     return <div>Loading...</div>;
   }
 
+  // Grab the first contract document if available
+  const contractDoc = documents.find((d) => d.category === "Contract");
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -54,6 +57,65 @@ export function DocumentsView() {
           Upload Document
         </Button>
       </div>
+
+      {/* ------------------------------------------------------------------
+       * Contract acknowledgement banner
+       * ------------------------------------------------------------------ */}
+      {contractDoc ? (
+        <Card className="border-l-4 border-[#1A1F2C]/80 bg-[#F8F9FC]">
+          <CardContent className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <FileText className="h-6 w-6 text-[#1A1F2C]" />
+              <p className="text-sm">
+                A tenancy contract is available. Please review and acknowledge
+                the terms &amp; conditions.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if ((contractDoc as any).url) {
+                    window.open((contractDoc as any).url, "_blank");
+                  } else {
+                    toast({
+                      title: "No file URL",
+                      description:
+                        "A downloadable version of the contract is not available.",
+                    });
+                  }
+                }}
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                View Contract
+              </Button>
+              <Button
+                size="sm"
+                className="bg-[#1A1F2C] hover:bg-[#151922] text-white"
+                onClick={() =>
+                  toast({
+                    title: "Contract Accepted",
+                    description:
+                      "You have agreed to the terms of the tenancy contract.",
+                  })
+                }
+              >
+                Agree&nbsp;to&nbsp;Terms
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card className="border-l-4 border-yellow-500 bg-yellow-50">
+          <CardContent className="p-4 flex items-center gap-3">
+            <FileText className="h-6 w-6 text-yellow-600" />
+            <p className="text-sm text-yellow-800">
+              No tenancy contract has been uploaded yet.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>

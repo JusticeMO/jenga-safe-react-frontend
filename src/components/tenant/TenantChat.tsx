@@ -99,10 +99,6 @@ export function TenantChat() {
           <h1 className="text-xl md:text-2xl font-bold">Tenant Chat</h1>
           <p className="text-sm text-gray-600 mt-1">Riverside Apartments Chat Group</p>
         </div>
-        <Button variant="outline" size="sm">
-          <Users className="mr-2 h-4 w-4" />
-          Share Contact Info
-        </Button>
       </div>
 
       <Card className="h-[calc(100vh-200px)] flex flex-col">
@@ -112,7 +108,7 @@ export function TenantChat() {
               <CardTitle className="text-lg">Riverside Apartments Chat Group</CardTitle>
               <p className="text-sm text-gray-500 flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                12 tenants • 3 online
+                Community group for all tenants
               </p>
             </div>
           </div>
