@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment
+.env
+
+# Nested accidental project copy
+jenga-safe-react-frontend/

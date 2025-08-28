@@ -6,18 +6,31 @@ import { PaymentMethodsView } from "./payment/PaymentMethodsView";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { PaymentSummaryCards } from "./payment/PaymentSummaryCards";
 import { UpcomingPaymentsTable } from "./payment/UpcomingPaymentsTable";
-import { PaymentDialog } from "./payment/PaymentDialog";
+import { STKPushDialog } from "./payment/STKPushDialog";
 import { apiClient } from "@/lib/api";
 import { Payment } from "@/types";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/useAuth";
+import { useMemo } from "react";
 
 export function PaymentsView() {
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [upcomingPayments, setUpcomingPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Read any pre-filled property context saved during registration
+  const propertyDetails = useMemo(() => {
+    try {
+      const raw = localStorage.getItem("propertyDetails");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, []);
 
   useEffect(() => {
     const fetchPayments = async () => {
@@ -73,7 +86,23 @@ export function PaymentsView() {
           <Button 
             size="sm"
             className="bg-[#ea384c] hover:bg-[#d32f41] text-white"
-            onClick={() => handleMakePayment(upcomingPayments[0])}
+            onClick={() => {
+              if (upcomingPayments[0]) {
+                handleMakePayment(upcomingPayments[0]);
+              } else {
+                /* Craft a minimal fallback payment so the dialog opens */
+                const fallback: Payment = {
+                  id: "manual-" + Date.now(),
+                  amount: propertyDetails?.rentAmount ?? 0,
+                  date: new Date().toISOString(),
+                  description: propertyDetails?.unitNumber
+                    ? `Rent for ${propertyDetails.unitNumber}`
+                    : "Rent Payment",
+                  status: "pending",
+                };
+                handleMakePayment(fallback);
+              }
+            }}
           >
             <Plus className="mr-2 h-4 w-4" />
             Make Payment
@@ -99,10 +128,19 @@ export function PaymentsView() {
         <PaymentMethodsView />
       </div>
 
-      <PaymentDialog 
+      {/* ------------------------------------------------------------------
+       * M-Pesa STK dialog (read-only phone + property info)
+       * ------------------------------------------------------------------ */}
+      <STKPushDialog
         isOpen={isPaymentDialogOpen}
         onOpenChange={setIsPaymentDialogOpen}
-        selectedPayment={selectedPayment}
+        rentAmount={
+          selectedPayment?.amount ?? propertyDetails?.rentAmount ?? 0
+        }
+        unitName={
+          propertyDetails?.unitNumber ?? selectedPayment?.description ?? "Unit"
+        }
+        phoneNumber={user?.phone ?? "07XXXXXXXX"}
         onClose={handleCloseDialog}
       />
     </div>

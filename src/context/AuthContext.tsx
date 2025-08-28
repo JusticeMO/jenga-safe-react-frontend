@@ -67,6 +67,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  /**
+   * Register a new account and treat the user as logged-in immediately.
+   */
+  const register = async (data: {
+    name: string;
+    email: string;
+    phone?: string;
+    password: string;
+    password_confirmation: string;
+    role: 'tenant' | 'landlord';
+  }): Promise<boolean> => {
+    console.log('Registering from AuthContext...', data);
+    try {
+      const response = await apiClient.register(data);
+      console.log('register response:', response);
+
+      if (response.success) {
+        setUser(response.user);
+        toast({
+          title: 'Success',
+          description: 'Registration successful – you are now logged in',
+        });
+        return true;
+      }
+
+      toast({
+        title: 'Error',
+        description: response.message || 'Registration failed',
+        variant: 'destructive',
+      });
+      return false;
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Registration failed';
+      console.error('Error in register:', error);
+      toast({
+        title: 'Error',
+        description: message,
+        variant: 'destructive',
+      });
+      return false;
+    }
+  };
+
   const logout = async () => {
     console.log("Logging out from AuthContext...");
     try {
@@ -86,6 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = {
     user,
     login,
+    register,
     logout,
     isAuthenticated: !!user,
     loading,

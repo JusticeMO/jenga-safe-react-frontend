@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { apiClient } from "@/lib/api";
+import { useAuth } from "@/context/useAuth";
 import AccountInfoForm from "./register/AccountInfoForm";
 import PersonalInfoForm from "./register/PersonalInfoForm";
 import TenantHousingForm from "./register/TenantHousingForm";
@@ -13,6 +13,7 @@ const RegisterForm = () => {
   const { toast } = useToast();
   // React Router navigation helper – allows us to redirect after successful registration
   const navigate = useNavigate();
+  const { register } = useAuth();
   const [formStep, setFormStep] = useState(0);
   const [role, setRole] = useState<"tenant" | "landlord">("tenant");
   const [housingStatus, setHousingStatus] = useState<"looking" | "moving_in" | "invited">("looking");
@@ -68,11 +69,10 @@ const RegisterForm = () => {
         password_confirmation: formData.confirmPassword,
         role: role,
       };
-      console.log("Calling apiClient.register with:", registrationData);
-      const response = await apiClient.register(registrationData);
-      console.log("apiClient.register response:", response);
+      console.log("Calling context register with:", registrationData);
+      const ok = await register(registrationData);
 
-      if (response.success) {
+      if (ok) {
         toast({
           title: "Registration Successful",
           description: "Your account has been created and you have been logged in.",
@@ -87,7 +87,7 @@ const RegisterForm = () => {
          *     • moving_in     → flag property in localStorage then /tenant/dashboard
          *     • fallback      → /tenant/dashboard
          * ------------------------------------------------------------------ */
-        if (response.user?.role === "landlord") {
+        if (role === "landlord") {
           navigate("/landlord/dashboard");
         } else {
           // tenant
@@ -126,7 +126,7 @@ const RegisterForm = () => {
       } else {
         toast({
           title: "Registration Failed",
-          description: response.message || "An error occurred during registration.",
+          description: "An error occurred during registration.",
           variant: "destructive",
         });
       }
