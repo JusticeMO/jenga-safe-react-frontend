@@ -7,19 +7,37 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const SettingsPage = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Wait for initial auth check to complete before redirecting
+    if (loading) return;
+
     if (!isAuthenticated) {
       navigate("/login");
     } else if (user?.role !== "landlord") {
       navigate("/tenant/dashboard");
     }
-  }, [isAuthenticated, navigate, user]);
+  }, [loading, isAuthenticated, navigate, user]);
+
+  // -----------------------------------------------------------------------
+  // Full-screen placeholders to avoid white-screen flashes during auth flow
+  // -----------------------------------------------------------------------
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <span className="text-sm text-gray-500">Loading...</span>
+      </div>
+    );
+  }
 
   if (!isAuthenticated || user?.role !== "landlord") {
-    return null;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <span className="text-sm text-gray-500">Redirecting...</span>
+      </div>
+    );
   }
 
   return (
