@@ -4,6 +4,8 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  /** Optional phone number returned by backend (may be null) */
+  phone?: string;
   role: UserRole;
   profile_picture?: string;
   has_assigned_property?: boolean;

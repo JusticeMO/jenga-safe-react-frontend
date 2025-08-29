@@ -16,6 +16,7 @@ import {
   Unit,
   Report,
   EmergencyContact,
+  Document,
 } from "@/types";
 
 // Allow overriding the API base URL via Vite env var. Falls back to localhost.
