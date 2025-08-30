@@ -13,6 +13,12 @@ export function DocumentsView() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // --- Lease state ---------------------------------------------------------
+  const [unitId, setUnitId] = useState<string | number | null>(null);
+  const [leaseTerms, setLeaseTerms] = useState<string>("");
+  const [leaseAcceptedAt, setLeaseAcceptedAt] = useState<string | null>(null);
+  const hasLease = !!leaseTerms;
+
   useEffect(() => {
     const fetchDocuments = async () => {
       setIsLoading(true);
@@ -41,12 +47,35 @@ export function DocumentsView() {
     fetchDocuments();
   }, [toast]);
 
+  // ------------------------------------------------------------------
+  // Fetch tenant unit & lease terms
+  // ------------------------------------------------------------------
+  useEffect(() => {
+    const fetchLease = async () => {
+      try {
+        const unitRes = await apiClient.getMyUnit();
+        if (unitRes.success && unitRes.data) {
+          const id = (unitRes.data as any).id;
+          setUnitId(id);
+          const leaseRes = await apiClient.getTenantLease(id);
+          if (leaseRes.success && leaseRes.data) {
+            setLeaseTerms(leaseRes.data.lease_terms ?? "");
+            setLeaseAcceptedAt(leaseRes.data.lease_accepted_at ?? null);
+          }
+        }
+      } catch (err) {
+        // silent fail – lease banner simply won't show
+        console.error("Failed to load lease info", err);
+      }
+    };
+    fetchLease();
+  }, []);
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
-  // Grab the first contract document if available
-  const contractDoc = documents.find((d) => d.category === "Contract");
+  const showLeaseBanner = hasLease && !leaseAcceptedAt;
 
   return (
     <div className="p-6 space-y-6">
@@ -61,13 +90,13 @@ export function DocumentsView() {
       {/* ------------------------------------------------------------------
        * Contract acknowledgement banner
        * ------------------------------------------------------------------ */}
-      {contractDoc ? (
+      {showLeaseBanner ? (
         <Card className="border-l-4 border-[#1A1F2C]/80 bg-[#F8F9FC]">
           <CardContent className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div className="flex items-center gap-3">
               <FileText className="h-6 w-6 text-[#1A1F2C]" />
               <p className="text-sm">
-                A tenancy contract is available. Please review and acknowledge
+                Your lease contract is available. Please review and acknowledge
                 the terms &amp; conditions.
               </p>
             </div>
@@ -76,15 +105,13 @@ export function DocumentsView() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  if ((contractDoc as any).url) {
-                    window.open((contractDoc as any).url, "_blank");
-                  } else {
-                    toast({
-                      title: "No file URL",
-                      description:
-                        "A downloadable version of the contract is not available.",
-                    });
-                  }
+                  toast({
+                    title: "Lease Preview",
+                    description:
+                      leaseTerms.length > 0
+                        ? leaseTerms.slice(0, 100) + (leaseTerms.length > 100 ? "..." : "")
+                        : "No lease terms text available.",
+                  });
                 }}
               >
                 <Eye className="mr-2 h-4 w-4" />
@@ -93,13 +120,25 @@ export function DocumentsView() {
               <Button
                 size="sm"
                 className="bg-[#1A1F2C] hover:bg-[#151922] text-white"
-                onClick={() =>
-                  toast({
-                    title: "Contract Accepted",
-                    description:
-                      "You have agreed to the terms of the tenancy contract.",
-                  })
-                }
+                onClick={async () => {
+                  if (!unitId) return;
+                  try {
+                    const res = await apiClient.acceptTenantLease(unitId);
+                    if (res.success) {
+                      setLeaseAcceptedAt(new Date().toISOString());
+                      toast({
+                        title: "Contract Accepted",
+                        description: "You have agreed to the terms of the tenancy contract.",
+                      });
+                    }
+                  } catch (err) {
+                    toast({
+                      title: "Error",
+                      description: "Failed to accept lease terms.",
+                      variant: "destructive",
+                    });
+                  }
+                }}
               >
                 Agree&nbsp;to&nbsp;Terms
               </Button>

@@ -95,12 +95,20 @@ A modern, responsive React frontend for the Jenga Safe rental property managemen
 ## 🔧 Configuration
 
 ### Environment Variables
-The app automatically connects to the Laravel backend at `http://localhost:8000/api`. 
+By default, the app reads `VITE_API_BASE_URL` from your environment (see `.env.example`).  
+If the variable is **not** set, it falls back to `http://localhost:8000/api`.
 
-For production, update the API base URL in `src/lib/api.ts`:
-```typescript
-const API_BASE_URL = 'https://your-api-domain.com/api';
+Set it in your `.env`:
+```bash
+VITE_API_BASE_URL=http://127.0.0.1:8000/api
 ```
+
+For production:
+```bash
+VITE_API_BASE_URL=https://your-api-domain.com/api
+```
+
+⚠️ **Do not modify `src/lib/api.ts` directly**; prefer environment variables so each environment (development, staging, production) can use its own API endpoint.
 
 ### API Integration
 The frontend uses a comprehensive API client (`src/lib/api.ts`) that handles:
