@@ -3,12 +3,29 @@ import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import { CheckCircle, Search, Home, Mail } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/context/useAuth";
 
 const RegistrationPending = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated, user, loading } = useAuth();
   const [userType, setUserType] = useState<string>("tenant");
   const [housingStatus, setHousingStatus] = useState<string | null>(null);
+
+  // ------------------------------------------------------------------
+  // Auto-redirect authenticated users based on their role
+  // ------------------------------------------------------------------
+  useEffect(() => {
+    if (loading) return; // wait for initial auth check
+
+    if (isAuthenticated) {
+      if (user?.role === "landlord") {
+        navigate("/landlord/dashboard", { replace: true });
+      } else {
+        navigate("/tenant/dashboard", { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate, loading]);
   
   // Extract user type and housing status from location state if available
   useEffect(() => {
@@ -25,6 +42,11 @@ const RegistrationPending = () => {
   const handleNextSteps = (destination: string) => {
     navigate(destination);
   };
+
+  // While redirecting, render nothing to avoid flicker
+  if (isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
