@@ -234,7 +234,7 @@ export function DelegationPanel() {
         });
         
         // Remove from local state
-        setDelegates(prev => prev.filter(delegate => delegate.id !== delegateToRevoke.id));
+        setDelegates(prev => prev.filter(d => d.id !== delegate.id));
       } else {
         toast({
           title: "Error",
