@@ -161,6 +161,78 @@ class ApiClient {
       }
     }
 
+    // --- landlord expansion fields ---
+    
+    // location_city
+    if ((data as any).location_city !== undefined) {
+      payload.location_city = (data as any).location_city;
+    }
+    
+    // water_rate
+    if ((data as any).water_rate !== undefined) {
+      const rate = Number((data as any).water_rate);
+      if (!Number.isNaN(rate)) {
+        payload.water_rate = rate;
+      }
+    }
+    
+    // electricity_rate
+    if ((data as any).electricity_rate !== undefined) {
+      const rate = Number((data as any).electricity_rate);
+      if (!Number.isNaN(rate)) {
+        payload.electricity_rate = rate;
+      }
+    }
+    
+    // payment_method
+    if ((data as any).payment_method !== undefined) {
+      payload.payment_method = (data as any).payment_method;
+    }
+    
+    // payment_account
+    if ((data as any).payment_account !== undefined) {
+      payload.payment_account = (data as any).payment_account;
+    }
+    
+    // bank_name
+    if ((data as any).bank_name !== undefined) {
+      payload.bank_name = (data as any).bank_name;
+    }
+    
+    // penalty_type
+    if ((data as any).penalty_type !== undefined) {
+      payload.penalty_type = (data as any).penalty_type;
+    }
+    
+    // penalty_value
+    if ((data as any).penalty_value !== undefined) {
+      const value = Number((data as any).penalty_value);
+      if (!Number.isNaN(value)) {
+        payload.penalty_value = value;
+      }
+    }
+    
+    // garbage_fee
+    if ((data as any).garbage_fee !== undefined) {
+      const fee = Number((data as any).garbage_fee);
+      if (!Number.isNaN(fee)) {
+        payload.garbage_fee = fee;
+      }
+    }
+    
+    // management_fee_type
+    if ((data as any).management_fee_type !== undefined) {
+      payload.management_fee_type = (data as any).management_fee_type;
+    }
+    
+    // management_fee_value
+    if ((data as any).management_fee_value !== undefined) {
+      const value = Number((data as any).management_fee_value);
+      if (!Number.isNaN(value)) {
+        payload.management_fee_value = value;
+      }
+    }
+
     return payload;
   }
 
@@ -448,6 +520,92 @@ class ApiClient {
 
   async getWaterUsageHistory(): Promise<ApiResponse<WaterUsageHistory[]>> {
     return this.request<WaterUsageHistory[]>('/water-usage-history');
+  }
+
+  // --- Landlord expansion methods ---
+  
+  /**
+   * Get property manager delegates for the authenticated landlord.
+   * Optionally filter by property_id.
+   */
+  async getDelegates(params?: { propertyId?: string | number }): Promise<ApiResponse<any[]>> {
+    let endpoint = '/landlord/delegates';
+    if (params?.propertyId !== undefined && params.propertyId !== null) {
+      endpoint += `?property_id=${encodeURIComponent(params.propertyId)}`;
+    }
+    return this.request<any[]>(endpoint);
+  }
+  
+  /**
+   * Invite a new delegate (property manager) to manage a property.
+   */
+  async inviteDelegate(data: { 
+    manager_email: string; 
+    property_id: number | string; 
+    access_level: 'limited' | 'full' 
+  }): Promise<ApiResponse<any>> {
+    return this.request<any>('/landlord/delegate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+  
+  /**
+   * Update a delegate's access level.
+   */
+  async updateDelegate(
+    id: number | string, 
+    data: { access_level: 'limited' | 'full' }
+  ): Promise<ApiResponse<any>> {
+    return this.request<any>(`/landlord/delegate/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+  
+  /**
+   * Revoke a delegate's access to a property.
+   */
+  async revokeDelegate(id: number | string): Promise<ApiResponse<null>> {
+    return this.request<null>(`/landlord/delegate/${id}`, {
+      method: 'DELETE',
+    });
+  }
+  
+  /**
+   * Create a new property unit.
+   */
+  async createUnit(data: any): Promise<ApiResponse<any>> {
+    return this.request<any>('/units', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+  
+  /**
+   * Update an existing property unit.
+   */
+  async updateUnit(id: number | string, data: any): Promise<ApiResponse<any>> {
+    return this.request<any>(`/units/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+  
+  /**
+   * Get lease terms for a specific unit (tenant only).
+   */
+  async getTenantLease(unitId: number | string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/tenant/lease/${unitId}`);
+  }
+  
+  /**
+   * Accept lease terms for a specific unit (tenant only).
+   */
+  async acceptTenantLease(unitId: number | string): Promise<ApiResponse<any>> {
+    return this.request<any>(`/tenant/lease/${unitId}/accept`, {
+      method: 'POST',
+    });
   }
 }
 
