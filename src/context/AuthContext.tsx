@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, []);
 
-  const login = async (input: string, password: string): Promise<boolean> => {
+  const login = async (input: string, password: string): Promise<User | null> => {
     console.log("Logging in from AuthContext...");
     try {
       const response = await apiClient.login(input, password);
@@ -46,14 +46,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           title: "Success",
           description: "Login successful",
         });
-        return true;
+        return response.user;
       } else {
         toast({
           title: "Error",
           description: response.message || "Login failed",
           variant: "destructive",
         });
-        return false;
+        return null;
       }
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Login failed";
@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: message,
         variant: "destructive",
       });
-      return false;
+      return null;
     }
   };
 
@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string;
     password_confirmation: string;
     role: 'tenant' | 'landlord';
-  }): Promise<boolean> => {
+  }): Promise<User | null> => {
     console.log('Registering from AuthContext...', data);
     try {
       const response = await apiClient.register(data);
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           title: 'Success',
           description: 'Registration successful – you are now logged in',
         });
-        return true;
+        return response.user;
       }
 
       toast({
@@ -97,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: response.message || 'Registration failed',
         variant: 'destructive',
       });
-      return false;
+      return null;
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : 'Registration failed';
@@ -107,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: message,
         variant: 'destructive',
       });
-      return false;
+      return null;
     }
   };
 

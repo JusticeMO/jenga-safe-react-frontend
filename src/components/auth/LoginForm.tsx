@@ -9,24 +9,24 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { login, user } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
-      const success = await login(email, password);
-      
-      if (success) {
+      const loggedInUser = await login(email, password);
+
+      if (loggedInUser) {
         toast({
           title: "Login Successful",
           description: "You have successfully logged in",
         });
 
-        // Redirect based on the role now stored in context
-        if (user?.role === "landlord") {
+        // Redirect based on the role from the successful login response
+        if (loggedInUser.role === "landlord") {
           navigate("/landlord/dashboard");
         } else {
           navigate("/tenant/dashboard");
