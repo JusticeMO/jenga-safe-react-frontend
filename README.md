@@ -51,7 +51,7 @@ A modern, responsive React frontend for the Jenga Safe rental property managemen
    ```
 
 4. **Access the application**
-   - Frontend: http://localhost:3000
+   - Frontend: http://localhost:8000
    - Make sure Laravel backend is running on http://localhost:8000
 
 ## 🔐 Demo Accounts
@@ -218,3 +218,4 @@ For support and questions:
 ---
 
 Built with ❤️ using React 18 and TypeScript
+
