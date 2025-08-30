@@ -70,9 +70,9 @@ const RegisterForm = () => {
         role: role,
       };
       console.log("Calling context register with:", registrationData);
-      const ok = await register(registrationData);
+      const registeredUser = await register(registrationData);
 
-      if (ok) {
+      if (registeredUser) {
         toast({
           title: "Registration Successful",
           description: "Your account has been created and you have been logged in.",
@@ -87,7 +87,7 @@ const RegisterForm = () => {
          *     • moving_in     → flag property in localStorage then /tenant/dashboard
          *     • fallback      → /tenant/dashboard
          * ------------------------------------------------------------------ */
-        if (role === "landlord") {
+        if (registeredUser.role === "landlord") {
           navigate("/landlord/dashboard");
         } else {
           // tenant
