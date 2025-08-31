@@ -69,6 +69,22 @@ export function LandlordDashboard() {
         </div>
       </div>
       
+      {/* Team & Delegation quick-access card */}
+      <div className="p-6 bg-white rounded-lg shadow-sm border flex flex-col md:flex-row md:items-center md:justify-between">
+        <div className="space-y-1">
+          <h2 className="text-lg font-medium">Team &amp; Delegation</h2>
+          <p className="text-sm text-gray-600">
+            Invite property managers or update their access levels.
+          </p>
+        </div>
+        <Button
+          className="mt-4 md:mt-0"
+          onClick={() => navigate('/landlord/settings#delegation')}
+        >
+          Manage Delegation
+        </Button>
+      </div>
+
       <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
         <div className="p-6 border-b">
           <h2 className="text-lg font-medium">Your Properties</h2>
