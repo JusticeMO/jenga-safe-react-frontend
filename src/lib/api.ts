@@ -238,11 +238,19 @@ class ApiClient {
   }
 
   // Auth endpoints
-  async login(input: string, password: string): Promise<ApiResponse<{ user: User; token: string }>> {
+  async login(
+    input: string,
+    password: string,
+    role?: UserRole
+  ): Promise<ApiResponse<{ user: User; token: string }>> {
     console.log("Logging in with:", { input });
     const response = await this.request<{ user: User; token: string }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ input, password }),
+      body: JSON.stringify({
+        input,
+        password,
+        ...(role ? { role } : {}),
+      }),
     });
 
     // Token may be at top level (preferred) or nested in data for legacy responses

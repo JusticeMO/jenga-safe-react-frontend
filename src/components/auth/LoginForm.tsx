@@ -17,7 +17,16 @@ export function LoginForm() {
     setIsLoading(true);
 
     try {
-      const loggedInUser = await login(email, password);
+      // Infer role from the input for back-ends that still expect it
+      const inferRole = (input: string): "tenant" | "landlord" | undefined => {
+        const lower = input.toLowerCase();
+        if (lower.includes("landlord")) return "landlord";
+        if (lower.includes("tenant") || lower.startsWith("07")) return "tenant";
+        return undefined; // let the API infer if we can’t
+      };
+
+      const role = inferRole(email);
+      const loggedInUser = await login(email, password, role as any);
 
       if (loggedInUser) {
         toast({
