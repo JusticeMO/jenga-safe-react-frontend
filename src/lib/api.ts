@@ -61,6 +61,7 @@ class ApiClient {
       const response = await fetch(url, {
         ...options,
         headers,
+        credentials: 'include',
       });
 
       // Auto-logout on expired / invalid token
