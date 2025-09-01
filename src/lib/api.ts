@@ -64,6 +64,10 @@ class ApiClient {
         credentials: 'include',
       });
 
+      // Parse JSON response before any error handling
+      const responseData = await response.json();
+      console.log(`Response from ${endpoint}:`, responseData);
+
       // Auto-logout on expired / invalid token
       if (response.status === 401) {
         this.clearToken();
@@ -72,8 +76,10 @@ class ApiClient {
         throw new Error("Unauthorized");
       }
 
-      const responseData = await response.json();
-      console.log(`Response from ${endpoint}:`, responseData);
+      // Return validation errors without throwing for 422 responses
+      if (response.status === 422) {
+        return responseData;
+      }
 
       if (!response.ok) {
         console.error(`HTTP error from ${endpoint}:`, response.status, responseData);
@@ -247,7 +253,7 @@ class ApiClient {
     const response = await this.request<{ user: User; token: string }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({
-        input,
+        email: input,
         password,
         ...(role ? { role } : {}),
       }),
