@@ -33,10 +33,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, []);
 
-  const login = async (input: string, password: string): Promise<User | null> => {
+  const login = async (
+    input: string,
+    password: string,
+    role?: 'tenant' | 'landlord'
+  ): Promise<User | null> => {
     console.log("Logging in from AuthContext...");
     try {
-      const response = await apiClient.login(input, password);
+      const response = await apiClient.login(input, password, role);
       console.log("login response:", response);
       if (response.success) {
         setUser(response.user);

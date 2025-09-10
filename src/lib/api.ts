@@ -22,7 +22,7 @@ import {
 // Allow overriding the API base URL via Vite env var. Falls back to localhost.
 // `import.meta.env` typings may vary, cast `import.meta` to any for broad compatibility.
 const API_BASE_URL =
-  (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:8000/api";
+  (import.meta as any).env?.VITE_API_BASE_URL || "http://127.0.0.1:8000/api";
 
 // API client with token management
 class ApiClient {
@@ -64,6 +64,10 @@ class ApiClient {
         credentials: 'include',
       });
 
+      // Parse JSON response before any error handling
+      const responseData = await response.json();
+      console.log(`Response from ${endpoint}:`, responseData);
+
       // Auto-logout on expired / invalid token
       if (response.status === 401) {
         this.clearToken();
@@ -72,8 +76,10 @@ class ApiClient {
         throw new Error("Unauthorized");
       }
 
-      const responseData = await response.json();
-      console.log(`Response from ${endpoint}:`, responseData);
+      // Return validation errors without throwing for 422 responses
+      if (response.status === 422) {
+        return responseData;
+      }
 
       if (!response.ok) {
         console.error(`HTTP error from ${endpoint}:`, response.status, responseData);
@@ -238,11 +244,19 @@ class ApiClient {
   }
 
   // Auth endpoints
-  async login(input: string, password: string): Promise<ApiResponse<{ user: User; token: string }>> {
+  async login(
+    input: string,
+    password: string,
+    role?: UserRole
+  ): Promise<ApiResponse<{ user: User; token: string }>> {
     console.log("Logging in with:", { input });
     const response = await this.request<{ user: User; token: string }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ input, password }),
+      body: JSON.stringify({
+        email: input,
+        password,
+        ...(role ? { role } : {}),
+      }),
     });
 
     // Token may be at top level (preferred) or nested in data for legacy responses

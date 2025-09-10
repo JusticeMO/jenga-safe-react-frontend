@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/useAuth";
-import { toast } from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
 import { LoginHeader } from "./login/LoginHeader";
 import { CredentialsForm } from "./login/CredentialsForm";
 
@@ -11,13 +11,23 @@ export function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const loggedInUser = await login(email, password);
+      // Infer role from the input for back-ends that still expect it
+      const inferRole = (input: string): "tenant" | "landlord" | undefined => {
+        const lower = input.toLowerCase();
+        if (lower.includes("landlord")) return "landlord";
+        if (lower.includes("tenant") || lower.startsWith("07")) return "tenant";
+        return undefined; // let the API infer if we can't
+      };
+
+      const role = inferRole(email);
+      const loggedInUser = await login(email, password, role as any);
 
       if (loggedInUser) {
         toast({
